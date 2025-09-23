@@ -8,6 +8,7 @@ export const crop_details_service = async (data) => {
             soil_type:data.soil_type,
             feild_size:data.feild_size,
             irrigation_type:data.irrigation_type,
+            previous_crops:data.previous_crops,
             location:data.location
         })
 
@@ -40,3 +41,24 @@ export const soil_report_service = async (data) => {
         return { success: false, error: "Database error" };
     }
 }
+
+
+export const fetch_crop_details_service = async (farmer_id) => {
+  try {
+    const crops = await crop.find({ farmer_id: farmer_id }).lean(); // use .lean() for plain JS objects
+    const soil_reports = await soil_report.find({
+      crop_id: { $in: crops.map(c => c._id) }
+    });
+
+    // Attach soil reports to respective crops
+    const cropsWithReports = crops.map(c => {
+      const reports = soil_reports.filter(r => r.crop_id.toString() === c._id.toString());
+      return { ...c, soil_reports: reports };
+    });
+
+    return cropsWithReports;
+  } catch (err) {
+    console.error("Error fetching crop details:", err);
+    return { success: false, error: "Database error" };
+  }
+};

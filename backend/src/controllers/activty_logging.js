@@ -1,5 +1,5 @@
 import { ca } from "zod/v4/locales";
-import { save_activity } from "../services/activity_logging.js"
+import { fetch_activity_details_service, save_activity } from "../services/activity_logging.js"
 import { logActivity } from "../services/vector_activity.js";
 
 
@@ -9,7 +9,6 @@ export const log_activity= async(req,res)=>{
     const input= req.body;
 
     const saved_activity= await save_activity(input)
-
 
     if(saved_activity.success===false){
         return res.status(500).json({error:saved_activity.error})
@@ -39,4 +38,13 @@ export const log_activity= async(req,res)=>{
 }
 
 
+}
+
+export const fetch_activities= async (req,res)=>{
+    const farmer_id= req.params.farmer_id;
+    const activities= await fetch_activity_details_service(farmer_id)
+    if(activities.success===false){
+        return res.status(500).json({error:activities.error})
+    }
+    res.status(200).json(activities)
 }

@@ -21,3 +21,14 @@ export async function save_activity(data) {
   }
 }
 
+
+export async function fetch_activity_details_service(farmer_id){
+  try{
+    const activities = await activity.find({ farmer_id: farmer_id }).lean(); // use .lean() for plain JS objects
+    return activities;
+  }
+  catch(err){
+    console.error("Error fetching activities:", err);
+    return { success: false, error: "Database error" };
+  }
+}
