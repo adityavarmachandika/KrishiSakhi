@@ -15,6 +15,7 @@ function App() {
         <Route path='/' element={<Hero/>}/>
         <Route path='/login' element={<Login/>}/>
         <Route path='/register' element={<RegistrationPage/>}/>
+        
       </Routes>
     </>
   )
