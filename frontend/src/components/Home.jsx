@@ -1,0 +1,280 @@
+import React, { useState, useEffect } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { 
+  faComments, 
+  faChartLine, 
+  faLeaf, 
+  faSeedling,
+  faCloud,
+  faTasks,
+  faArrowRight,
+  faUsers,
+  faGlobe
+} from '@fortawesome/free-solid-svg-icons';
+import MainPage_Image from "../assets/MainPage_Image.jpg";
+import WeatherWidget from './WeatherWidget';
+import Task from './Task';
+import Updates from './Updates';
+
+const Home = () => {
+  const [isVisible, setIsVisible] = useState(false);
+  const [hoveredCard, setHoveredCard] = useState(null);
+
+  useEffect(() => {
+    setIsVisible(true);
+  }, []);
+
+  const features = [
+    {
+      id: 1,
+      icon: faComments,
+      title: "AI Chat Assistant",
+      description: "Get instant farming advice and solutions powered by AI",
+      color: "from-green-400 to-green-600",
+      delay: "0s"
+    },
+    {
+      id: 2,
+      icon: faChartLine,
+      title: "Activity Logging",
+      description: "Track and analyze your farming activities efficiently",
+      color: "from-blue-400 to-blue-600", 
+      delay: "0.2s"
+    },
+    {
+      id: 3,
+      icon: faCloud,
+      title: "Weather Insights",
+      description: "Real-time weather updates for better crop planning",
+      color: "from-purple-400 to-purple-600",
+      delay: "0.4s"
+    },
+    {
+      id: 4,
+      icon: faTasks,
+      title: "Task Management",
+      description: "Organize and prioritize your farm tasks effectively",
+      color: "from-orange-400 to-orange-600",
+      delay: "0.6s"
+    }
+  ];
+
+  const stats = [
+    { number: "10K+", label: "Happy Farmers", icon: faUsers },
+    { number: "50+", label: "Crops Supported", icon: faSeedling },
+    { number: "24/7", label: "AI Support", icon: faComments },
+    { number: "Global", label: "Reach", icon: faGlobe }
+  ];
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-green-50 to-blue-50 pt-24">
+      {/* Hero Section */}
+    
+            {/* Hero Section */}
+      <section className="container mx-auto px-6 py-20" id="hero">
+        <div className="grid lg:grid-cols-2 gap-16 items-center">
+          {/* Left Content */}
+          <div className={`transform transition-all duration-1000 ${isVisible ? 'translate-x-0 opacity-100' : '-translate-x-full opacity-0'}`}>
+            <div className="inline-flex items-center bg-green-50 text-green-700 px-4 py-2 rounded-full mb-8 border border-green-200">
+              <FontAwesomeIcon icon={faLeaf} className="mr-2 text-sm" />
+              <span className="font-medium text-sm">Smart Farming Assistant</span>
+            </div>
+            
+            <h1 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-6 leading-tight">
+              Welcome to{' '}
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-600 to-green-700">
+                Krishi Sakhi
+              </span>
+            </h1>
+            
+            <p className="text-lg text-gray-600 mb-10 leading-relaxed max-w-lg">
+              Your intelligent farming companion powered by AI. Get personalized advice, 
+              track activities, and optimize your agricultural practices for better yields.
+            </p>
+            
+            {/* Action Buttons */}
+            <div className="flex flex-col sm:flex-row gap-4 mb-12">
+              <button className="group bg-green-600 text-white px-8 py-3 rounded-lg font-semibold shadow-sm hover:shadow-md hover:bg-green-700 transition-all duration-300 flex items-center justify-center">
+                <FontAwesomeIcon icon={faComments} className="mr-3" />
+                Start Chatting
+                <FontAwesomeIcon icon={faArrowRight} className="ml-2 group-hover:translate-x-1 transition-transform duration-300" />
+              </button>
+              
+              <button className="group bg-white text-gray-700 px-8 py-3 rounded-lg font-semibold shadow-sm hover:shadow-md transition-all duration-300 border border-gray-200 hover:border-green-300 hover:text-green-700 flex items-center justify-center">
+                <FontAwesomeIcon icon={faChartLine} className="mr-3" />
+                Track Activities
+              </button>
+            </div>
+
+            {/* Stats */}
+            {/* <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+              {stats.map((stat, index) => (
+                <div key={index} className="text-center group cursor-pointer">
+                  <div className="bg-white rounded-lg p-4 shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
+                    <FontAwesomeIcon 
+                      icon={stat.icon} 
+                      className="text-2xl text-green-600 mb-2 group-hover:scale-110 transition-transform duration-300" 
+                    />
+                    <div className="text-2xl font-bold text-gray-900">{stat.number}</div>
+                    <div className="text-sm text-gray-600">{stat.label}</div>
+                  </div>
+                </div>
+              ))}
+            </div> */}
+          </div>
+
+          {/* Right Image */}
+          <div className={`transform transition-all duration-800 delay-200 ${isVisible ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'}`}>
+            <div className="relative">
+              <div className="bg-white rounded-lg p-2 shadow-sm border border-gray-100">
+                <img 
+                  src={MainPage_Image} 
+                  alt="Krishi Sakhi Dashboard" 
+                  className="w-full h-auto rounded-md"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+        <Updates/>
+
+      {/* Features Section */}
+      <section className="container mx-auto px-4 py-16" id="about">
+        <div className="text-center mb-16">
+          <h2 className="text-4xl font-bold text-gray-900 mb-4">
+            Powerful Features for Modern Farming
+          </h2>
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+            Discover how our AI-powered tools can transform your agricultural practices
+          </p>
+        </div>
+
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+          {features.map((feature) => (
+            <div
+              key={feature.id}
+              className={`group bg-white rounded-2xl p-8 shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-500 cursor-pointer border border-gray-100 hover:border-green-200 animate-fade-in-up`}
+              style={{ animationDelay: feature.delay }}
+              onMouseEnter={() => setHoveredCard(feature.id)}
+              onMouseLeave={() => setHoveredCard(null)}
+            >
+              <div className={`w-16 h-16 rounded-xl bg-gradient-to-br ${feature.color} flex items-center justify-center mb-6 transform group-hover:scale-110 transition-all duration-300 shadow-lg group-hover:shadow-xl`}>
+                <FontAwesomeIcon 
+                  icon={feature.icon} 
+                  className={`text-2xl text-white transition-all duration-300 ${hoveredCard === feature.id ? 'animate-pulse' : ''}`}
+                />
+              </div>
+              
+              <h3 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-green-600 transition-colors duration-300">
+                {feature.title}
+              </h3>
+              
+              <p className="text-gray-600 leading-relaxed">
+                {feature.description}
+              </p>
+              
+              <div className="mt-6 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                <span className="text-green-600 font-semibold flex items-center">
+                  Learn More 
+                  <FontAwesomeIcon icon={faArrowRight} className="ml-2 transform group-hover:translate-x-1 transition-transform duration-300" />
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Dashboard Preview Section */}
+      <section className="container mx-auto px-4 py-16">
+        <div className="text-center mb-16">
+          <h2 className="text-4xl font-bold text-gray-900 mb-4">
+            Your Farming Dashboard
+          </h2>
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+            Monitor weather, manage tasks, and stay updated with real-time insights
+          </p>
+        </div>
+
+        <div className="grid lg:grid-cols-2">
+          {/* Weather Widget */}
+          <div className="transform hover:-translate-y-1 transition-all duration-300" id="weather">
+            <WeatherWidget />
+          </div>
+
+          {/* Task Management */}
+          <div className="transform hover:-translate-y-1 transition-all duration-300">
+            <Task />
+          </div>          
+        </div>
+      </section>
+
+      {/* Chat Section */}
+      <section className="container mx-auto px-4 py-16" id="chat">
+        <div className="text-center mb-16">
+          <h2 className="text-4xl font-bold text-gray-900 mb-4">
+            AI Chat Assistant
+          </h2>
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+            Get instant farming advice and solutions powered by artificial intelligence
+          </p>
+        </div>
+        <div className="max-w-2xl mx-auto bg-white rounded-xl shadow-sm border border-gray-100 p-8">
+          <div className="text-center">
+            <div className="bg-green-100 rounded-full p-4 w-16 h-16 mx-auto mb-4">
+              <FontAwesomeIcon icon={faComments} className="text-green-600 text-2xl" />
+            </div>
+            <h3 className="text-xl font-semibold text-gray-800 mb-2">Chat Feature Coming Soon</h3>
+            <p className="text-gray-600 mb-6">Our AI-powered chat assistant will help you with farming questions, crop recommendations, and more.</p>
+            <button className="bg-green-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-700 transition-colors duration-300">
+              Join Waitlist
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* News Section */}
+      <section className="bg-gray-50 py-16" id="news">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">
+              Latest Agricultural News
+            </h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              Stay updated with the latest trends and news in agriculture
+            </p>
+          </div>
+          <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-sm border border-gray-100 p-8">
+            <div className="text-center">
+              <div className="bg-blue-100 rounded-full p-4 w-16 h-16 mx-auto mb-4">
+                <FontAwesomeIcon icon={faGlobe} className="text-blue-600 text-2xl" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-800 mb-2">News Feed Coming Soon</h3>
+              <p className="text-gray-600 mb-6">Get the latest agricultural news, market prices, and farming tips delivered right to your dashboard.</p>
+              <button className="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors duration-300">
+                Subscribe to Updates
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="bg-gradient-to-r from-green-600 via-green-700 to-blue-600 py-20">
+        <div className="container mx-auto px-4 text-center">
+          <h2 className="text-4xl font-bold text-white mb-6">
+            Ready to Transform Your Farming?
+          </h2>
+          <p className="text-xl text-green-100 mb-8 max-w-2xl mx-auto">
+            Join thousands of farmers who are already using Krishi Sakhi to optimize their agricultural practices
+          </p>
+          <button className="bg-white text-green-700 px-10 py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 hover:bg-gray-50">
+            Get Started Today
+          </button>
+        </div>
+      </section>
+    </div>
+  );
+};
+
+export default Home;

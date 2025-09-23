@@ -70,7 +70,7 @@ export default function Task() {
   };
 
   return (
-    <Card className="w-full max-w-md mx-auto lg:max-w-lg h-[500px] flex flex-col">
+    <Card className="w-full max-w-md mx-auto lg:max-w-lg h-[620px] flex flex-col">
       <CardHeader className="text-center pb-4 px-4 sm:px-6 flex-shrink-0">
         <div className="mx-auto w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mb-4">
           <FontAwesomeIcon icon={faCheckCircle} className="w-6 h-6 text-green-600" />
@@ -81,7 +81,7 @@ export default function Task() {
         </CardDescription>
       </CardHeader>
 
-      <CardContent className="space-y-3 sm:space-y-4 px-4 sm:px-6 flex-1 overflow-y-auto pb-6">
+      <CardContent className="space-y-3 sm:space-y-4 px-4 sm:px-6 pb-6 flex-1 overflow-y-auto">
         {farmerTasksData.map((task, index) => {
           const priority = getTaskPriority(task.date);
           const isCompleted = completedTasks.has(index);

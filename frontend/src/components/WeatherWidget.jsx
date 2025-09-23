@@ -53,7 +53,7 @@ const getUVIndexColor = (index) => {
 
 export default function WeatherWidget() {
   return (
-    <Card className="w-full max-w-md mx-auto lg:max-w-lg h-[500px] flex flex-col">
+    <Card className="w-full max-w-md mx-auto lg:max-w-lg bg-white h-[620px] flex flex-col">
       <CardHeader className="text-center pb-4 px-4 sm:px-6 flex-shrink-0">
         <div className="mx-auto w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mb-4">
           {getWeatherIcon(weatherData.current.condition)}
@@ -64,7 +64,7 @@ export default function WeatherWidget() {
         </CardDescription>
       </CardHeader>
 
-      <CardContent className="space-y-4 sm:space-y-6 px-4 sm:px-6 flex-1 overflow-y-auto pb-6">
+      <CardContent className="space-y-4 sm:space-y-6 px-4 sm:px-6 pb-6 flex-1">
         {/* Current Weather */}
         <div className="text-center">
           <div className="flex items-center justify-center gap-2 sm:gap-3 mb-3">
