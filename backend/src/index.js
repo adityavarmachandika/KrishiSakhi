@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import connectDB from "./config/db_connect.js";
 import router from "./router.js";
+import authMiddleware from "./middleware/jwt_middleware.js";
 
 
 const app = express();
@@ -20,7 +21,7 @@ app.use(cors())
 app.use("/api", router);
 
 
-app.get("/", (req, res) => {
+app.get("/",(req, res) => {
   res.send("Backend is running 🚀");
 });
 

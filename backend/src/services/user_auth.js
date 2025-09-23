@@ -3,7 +3,7 @@ import {farmer_details} from "../models/farmer.js";
 
 
 
-const user_signup_service = async (farmer) => {
+export const user_signup_service = async (farmer) => {
     try{
         const new_farmer= new farmer_details({
         name : farmer.name,
@@ -24,4 +24,11 @@ const user_signup_service = async (farmer) => {
 }
 
 
-export default user_signup_service
+export const user_login_service = async (phone)=>{
+    try {
+        const farmer = await farmer_details.findOne({phone:phone});
+        return farmer;
+    } catch (error) {
+        console.error("Error fetching farmer details:", error);
+    }
+}
