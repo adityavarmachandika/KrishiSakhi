@@ -44,9 +44,10 @@ function RegistrationPage() {
       // Handle the backend response structure: {"data inserted": farmerWithToken}
       const farmerData = res.data["data inserted"];
       
-      if (farmerData) {
-        toast.success('Registration successful! You can now login.');
-        navigate('/login');
+      if (farmerData && farmerData.token) {
+        login(farmerData.token);
+        toast.success('Registration successful! Welcome to KrishiSakhi!');
+        navigate('/crop-details');
       } else {
         console.error('Invalid response structure:', res.data);
         toast.error('Registration failed. Please try again.');

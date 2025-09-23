@@ -1,49 +1,58 @@
-// import query_table from "../models/query_table.js";
-import {queryActivityService} from "../services/summarize_log.js";
-
+import { query as QueryModel } from "../models/query.js";
+import { queryActivityService } from "../services/summarize_log.js";
 import { chatWithGemini } from "../services/gemini_service.js";
+
 export const query_controller = async (req, res) => {
   try {
-    const { farmer_id,crop_id, query } = req.body;
+    const { farmer_id, crop_id, query } = req.body;
+
     if (!farmer_id || !query) {
       return res.status(400).json({ error: "farmer_id and query are required" });
-    }   
+    }
 
+    const newQuery = new QueryModel({
+      farmer_id,
+      crop_id,
+      question: query, 
+      date: new Date(),
+    });
 
+    await newQuery.save();
 
-    // // Save the query to the database
-    // const newQuery = new query_table({
-    //   farmer_id,
-    //   crop_id,
-    //   query,
-    //   date: new Date(),
-    // }); 
-
-    // await newQuery.save();
-
-    // Fetch relevant activity logs and get a summary
-
-    
-
-    const { status, matched_ids, results, summary } = await queryActivityService(farmer_id,crop_id, query);
+    // Fetching relevant activity logs and summarize
+    const { status, matched_ids, results, summary } = await queryActivityService(farmer_id, query, crop_id);
 
     if (status !== 200) {
-      return res.status(status).json({ error: summary || "Error processing query" });
-    }   
-    //store and feed thesummary to the gemini as context
-    const history_context = `Here are some relevant history logs of the farmer:\n${summary}`;
-    const weather_context = `The current weather condition is: "Sunny" with a temperature of 30°C and humidity of 60%. There is no rain forecasted for the next 3 days.`;
+      return res.status(status).json({ error: summary || "Error fetching activity logs" });
+    }
 
-    const systemPrompt = `You are an expert agricultural assistant. Use the following context to answer the user's query:${query}.\n\n user actvity history:${history_context}\n\n currennt weather context:${weather_context}\n\nIf the context does not contain relevant information, answer based on your own knowledge. make sure it is brief and small not lengthy. If you don't know the answer, just say "I don't know". Do not make up an answer.`;
+    // Preparing contexts for Gemini
+    const history_context = `Relevant farmer activity history:\n${summary}`;
+    const weather_context = `Current weather: Sunny, 30°C, 60% humidity, no rain forecast for next 3 days.`;
+    // const crop_context=cro
+
+    const systemPrompt = `
+You are an expert agricultural assistant. Answer the user's query using the following context:
+
+User Query: ${query}
+
+Farmer Activity History: ${history_context}
+
+Current Weather Context: ${weather_context}
+
+If the context does not contain relevant info, answer based on your own knowledge.
+Make the answer brief and concise. If unsure, just say "I don't know". Do not fabricate answers.
+    `;
 
     const geminiResponse = await chatWithGemini(systemPrompt);
-     res.json({ reply: geminiResponse });
+
+    newQuery.answer = geminiResponse;
+    await newQuery.save();
+
+    
+    res.json({ results:newQuery});
   } catch (error) {
     console.error("Chat error:", error);
     res.status(500).json({ error: "Failed to generate response" });
-  }  
-}; 
-
-
-    
-
+  }
+};

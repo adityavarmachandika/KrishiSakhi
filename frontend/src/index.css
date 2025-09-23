@@ -14,7 +14,6 @@ body {
   color: black;
   scroll-behavior: smooth;
   font-family: "Mona Sans", sans-serif;
-  margin: 0px 10px;
 }
 
 section {
@@ -114,7 +113,7 @@ section {
     }
 
     &.not-scrolled {
-      @apply md:top-10 top-0 bg-transparent pb-1.5;
+      @apply md:top-8 top-0 bg-transparent pb-1.5;
     }
 
     .inner {

@@ -17,7 +17,6 @@ function LoginPage() {
     setLoading(true);
     
     try {
-      console.log('Attempting login with:', { phone, password: '***' }); // Debug log
       const res = await API.post('/farmer/login', { phone, password });
       console.log('Login response:', res.data); // Debug log
       
@@ -25,7 +24,7 @@ function LoginPage() {
       const farmerData = res.data["login successful"];
       
       if (farmerData && farmerData.token) {
-        login(farmerData.token);
+        login(farmerData.token); 
         toast.success('Login successful! Welcome back!');
         navigate('/'); 
       } else {

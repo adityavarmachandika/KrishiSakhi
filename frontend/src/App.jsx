@@ -8,6 +8,7 @@ import RegistrationPage from './components/RegistrationPage'
 import News from './components/News'
 import { ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
+import Crop_Details from './components/Crop_Details'
 
 function App() {
 
@@ -19,6 +20,7 @@ function App() {
         <Route path='/login' element={<Login/>}/>
         <Route path='/register' element={<RegistrationPage/>}/>
         <Route path='/news' element={<News/>}/>
+        <Route path='/crop-details' element={<Crop_Details/>}/>
         
       </Routes>
       <ToastContainer
