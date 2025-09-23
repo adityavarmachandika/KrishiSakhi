@@ -1,24 +1,30 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 // import API from '../utils/api';
 //import { setToken } from '../utils/auth';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
+import { UserContext } from "../context/UserContext";
 
 function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const navigate = useNavigate(); 
 
+  const { login } = useContext(UserContext);
+  
   const handleLogin = async (e) => {
-    // e.preventDefault();
-    // try {
-    //   const res = await API.post('/users/login', { email, password });
-    //   setToken(res.data.token);
-    //   toast.success('Login successful!');
-    //   navigate('/home'); 
-    // } catch (err) {
-    //   toast.error('Login failed! Please check your credentials.');
-    // }
+    e.preventDefault();
+    try {
+      const res = await API.post('/users/login', { email, password });
+      login(res.data.token);
+      toast.success('Login successful!');
+      navigate('/'); 
+      console.log('Login attempt with:', { email, password });
+      toast.success('Login successful!');
+      navigate('/'); 
+    } catch (err) {
+      toast.error('Login failed! Please check your credentials.');
+    }
   };
 
   const onRegisterClick = () => navigate('/register'); 

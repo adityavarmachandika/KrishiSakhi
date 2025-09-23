@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faComments, 
@@ -9,16 +10,22 @@ import {
   faTasks,
   faArrowRight,
   faUsers,
-  faGlobe
+  faGlobe,
+  faNewspaper,
+  faCalendarAlt,
+  faUser,
+  faExternalLinkAlt
 } from '@fortawesome/free-solid-svg-icons';
 import MainPage_Image from "../assets/MainPage_Image.jpg";
 import WeatherWidget from './WeatherWidget';
 import Task from './Task';
 import Updates from './Updates';
+import { LatestNews } from '../constants';
 
 const Home = () => {
   const [isVisible, setIsVisible] = useState(false);
   const [hoveredCard, setHoveredCard] = useState(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
     setIsVisible(true);
@@ -57,13 +64,6 @@ const Home = () => {
       color: "from-orange-400 to-orange-600",
       delay: "0.6s"
     }
-  ];
-
-  const stats = [
-    { number: "10K+", label: "Happy Farmers", icon: faUsers },
-    { number: "50+", label: "Crops Supported", icon: faSeedling },
-    { number: "24/7", label: "AI Support", icon: faComments },
-    { number: "Global", label: "Reach", icon: faGlobe }
   ];
 
   return (
@@ -234,27 +234,101 @@ const Home = () => {
       </section>
 
       {/* News Section */}
-      <section className="bg-gray-50 py-16" id="news">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
-              Latest Agricultural News
-            </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Stay updated with the latest trends and news in agriculture
-            </p>
-          </div>
-          <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-sm border border-gray-100 p-8">
-            <div className="text-center">
-              <div className="bg-blue-100 rounded-full p-4 w-16 h-16 mx-auto mb-4">
-                <FontAwesomeIcon icon={faGlobe} className="text-blue-600 text-2xl" />
-              </div>
-              <h3 className="text-xl font-semibold text-gray-800 mb-2">News Feed Coming Soon</h3>
-              <p className="text-gray-600 mb-6">Get the latest agricultural news, market prices, and farming tips delivered right to your dashboard.</p>
-              <button className="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors duration-300">
-                Subscribe to Updates
-              </button>
+      <section className=" py-20 bg-gray-50" id="news ">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="flex items-center justify-between mb-12">
+            <div>
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">
+                Latest Agricultural News
+              </h2>
+              <p className="text-lg text-gray-600">
+                Stay updated with the latest trends and news in agriculture
+              </p>
             </div>
+            <Link to="/news" className="hidden md:flex items-center text-blue-600 hover:text-blue-700 font-semibold">
+              View All <FontAwesomeIcon icon={faArrowRight} className="ml-2 h-5 w-5" />
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 mb-12">
+            {!isLoggedIn && LatestNews[0]?.articles?.length > 0 ? (
+              LatestNews[0].articles.map((article, index) => (
+                <div 
+                  key={index} 
+                  className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300 group cursor-pointer transform hover:-translate-y-1"
+                  onClick={() => window.open(article.url, '_blank')}
+                >
+                  {/* Card Header */}
+                  <div className="bg-gradient-to-r from-green-50 to-blue-50 p-4 border-b border-gray-100">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                          <FontAwesomeIcon icon={faNewspaper} className="text-green-600 text-sm" />
+                        </div>
+                        <div>
+                          <span className="text-sm font-semibold text-gray-800 block">
+                            {article.source.name}
+                          </span>
+                          <div className="flex items-center gap-1 text-xs text-gray-500">
+                            <FontAwesomeIcon icon={faCalendarAlt} className="text-xs" />
+                            {new Date(article.publishedAt).toLocaleDateString()}
+                          </div>
+                        </div>
+                      </div>
+                      <FontAwesomeIcon 
+                        icon={faExternalLinkAlt} 
+                        className="text-gray-400 group-hover:text-blue-600 transition-colors" 
+                      />
+                    </div>
+                  </div>
+                  
+                  {/* Card Body */}
+                  <div className="p-6">
+                    <h3 className="text-lg font-bold text-gray-900 mb-3 line-clamp-2 group-hover:text-blue-600 transition-colors leading-tight">
+                      {article.title}
+                    </h3>
+                    
+                    <p className="text-gray-600 text-sm mb-4 line-clamp-3 leading-relaxed">
+                      {article.description}
+                    </p>
+                    
+                    {/* Author & CTA */}
+                    <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+                      <div className="flex items-center gap-2">
+                        <FontAwesomeIcon icon={faUser} className="text-gray-400 text-xs" />
+                        <span className="text-xs text-gray-500">
+                          {article.author || 'Unknown Author'}
+                        </span>
+                      </div>
+                      <div className="flex items-center text-blue-600 text-sm font-semibold bg-blue-50 px-3 py-1 rounded-full group-hover:bg-blue-100 transition-colors">
+                        Read Article
+                        <FontAwesomeIcon icon={faArrowRight} className="ml-2 group-hover:translate-x-1 transition-transform duration-300" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : isLoggedIn ? (
+              <div className="col-span-full text-center py-16">
+                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 max-w-md mx-auto">
+                  <div className="bg-blue-100 rounded-full p-4 w-16 h-16 mx-auto mb-4">
+                    <FontAwesomeIcon icon={faGlobe} className="text-blue-600 text-2xl" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-gray-800 mb-2">Personalized News Coming Soon</h3>
+                  <p className="text-gray-600">Get personalized agricultural news based on your farming practices.</p>
+                </div>
+              </div>
+            ) : (
+              <div className="col-span-full text-center py-16">
+                <p className="text-gray-500">No news articles available.</p>
+              </div>
+            )}
+          </div>
+
+          <div className="text-center md:hidden">
+            <button className="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors duration-300 inline-flex items-center">
+              View All News <FontAwesomeIcon icon={faArrowRight} className="ml-2 h-5 w-5" />
+            </button>
           </div>
         </div>
       </section>

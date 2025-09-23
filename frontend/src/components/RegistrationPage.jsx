@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
-//import API from '../utils/api';
 import { toast } from 'react-toastify';
+import { UserContext } from '../context/UserContext';
 
 function RegistrationPage() {
   const navigate = useNavigate();
+  const { login } = useContext(UserContext);
 
   const [formData, setFormData] = useState({
     firstName: '',
@@ -22,14 +23,16 @@ function RegistrationPage() {
   };
 
   const handleSubmit = async (e) => {
-    // e.preventDefault();
-    // try {
-    //   await API.post('/users/register', formData);
-    //   toast.success('Registration successful! Please login.');
-    //   navigate('/login');
-    // } catch (err) {
-    //   toast.error('Registration failed! Please try again.');
-    // }
+    e.preventDefault();
+    try {
+      // Uncomment this when API is available
+      // await API.post('/users/register', formData);
+      console.log('Registration attempt with:', formData);
+      toast.success('Registration successful! Please login.');
+      navigate('/login');
+    } catch (err) {
+      toast.error('Registration failed! Please try again.');
+    }
   };
 
   const onLoginClick = () => navigate('/login');

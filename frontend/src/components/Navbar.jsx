@@ -1,15 +1,17 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useContext } from 'react';
 import { navLinks } from '../constants';
-import { Menu, X } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Menu, X, User, LogOut } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faLeaf } from '@fortawesome/free-solid-svg-icons';
+import { UserContext } from '../context/UserContext';
 
 
 const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const { user, isLoggedIn, logout } = useContext(UserContext);
+  const navigate = useNavigate();
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -19,22 +21,10 @@ const Navbar = () => {
     setIsMenuOpen(false);
   };
 
-  const handleLogin = () => {
-    console.log('Login clicked');
-    setIsLoggedIn(true);
-    setIsMenuOpen(false);
-  };
-
-  const handleSignUp = () => {
-    console.log('Sign up clicked');
-    setIsLoggedIn(true);
-    setIsMenuOpen(false);
-  };
-
   const handleLogout = () => {
-    console.log('Logout clicked');
-    setIsLoggedIn(false);
+    logout();
     setIsMenuOpen(false);
+    navigate('/');
   };
 
   useEffect(() => {
@@ -101,16 +91,14 @@ const Navbar = () => {
               </>
             ) : (
               <div className="flex items-center gap-4">
-                <button 
-                  onClick={() => window.location.href = '#contact'}
-                  className="px-5 py-2 bg-[#365949] text-white rounded-lg hover:bg-[#2a4236] transition-colors duration-300 font-medium"
-                >
-                  Contact Us
-                </button>
+                <span className="flex items-center gap-1 text-sm">
+                  <User className="h-4 w-4" /> {user?.name || 'User'}
+                </span>
                 <button 
                   onClick={handleLogout}
-                  className="px-4 py-2 border-2 border-red-500 text-red-500 rounded-lg hover:bg-red-500 hover:text-white transition-colors duration-300 font-medium"
+                  className="flex items-center gap-1 px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-300"
                 >
+                  <LogOut className="h-4 w-4" />
                   Logout
                 </button>
               </div>

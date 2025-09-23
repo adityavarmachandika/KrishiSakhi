@@ -51,4 +51,31 @@ const farmerTasksData = [
   },
 ];
 
-export { navLinks, farmerTasksData };
+const LatestNews = [
+  {
+    status: "ok",
+    totalResults: 1,
+    articles: [
+      {
+        source: {
+          id: null,
+          name: "Thehillstimes.in",
+        },
+        author: "The Hills Times",
+        title:
+          "Morigaon Agriculture Dept. Hosts Two-Day Farmer-Scientist Meet to Boost Awareness and Technical Training",
+        description:
+          "HT, Digital Morigaon , Sept 04: Morigaon District Agriculture Department in collaboration with CSS_ Agricultural Technology Management Agency, Morigaon (ATMA), has organized a two day awareness programme on ‘Farmer-Scientist meet and Interaction session’…",
+        url: "https://thehillstimes.in/assam/morigaon-agriculture-dept-hosts-two-day-farmer-scientist-meet-to-boost-awareness-and-technical-training",
+        urlToImage:
+          "https://thehillstimes.in/wp-content/uploads/2025/09/WhatsApp-Image-2025-09-05-at-11.32.51-PM.jpeg",
+        publishedAt: "2025-09-05T08:30:00Z",
+        content:
+          "HT, Digital\r\nMorigaon , Sept 04: Morigaon District Agriculture Department in collaboration with CSS_ Agricultural Technology Management Agency, Morigaon (ATMA), has organized a two day awareness … [+1230 chars]",
+      },
+    ],
+  },
+];
+
+
+export { navLinks, farmerTasksData, LatestNews };
