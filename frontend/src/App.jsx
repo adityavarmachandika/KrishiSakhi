@@ -5,6 +5,7 @@ import Hero from './sections/Hero'
 import Login from './components/Login'
 import './App.css'
 import RegistrationPage from './components/RegistrationPage'
+import News from './components/News'
 
 function App() {
 
@@ -15,6 +16,7 @@ function App() {
         <Route path='/' element={<Hero/>}/>
         <Route path='/login' element={<Login/>}/>
         <Route path='/register' element={<RegistrationPage/>}/>
+        <Route path='/news' element={<News/>}/>
         
       </Routes>
     </>

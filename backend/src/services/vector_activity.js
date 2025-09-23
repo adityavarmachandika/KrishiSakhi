@@ -14,6 +14,8 @@ async function getFarmerCollection(farmer_id) {
 }
 
 
+/*activity logging to chroma db as embedding and adding metadata this service to be called in controller/activity_logging after saving activity (aditya_chandika) to mongodb and should pass the mongo_id of saved activity as last parameter*/
+
 export const logActivity = async (farmer_id, crop_id, log, crop_condition, activity_id) => {
   try {
     if (!farmer_id || !log) {
