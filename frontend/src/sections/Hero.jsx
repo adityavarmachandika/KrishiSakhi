@@ -9,9 +9,6 @@ const Hero = () => {
   return (
     <div>
       <div><Home/></div>
-      <div>
-        <CropDetailsForm/>
-      </div>
     </div>
   )
 }
