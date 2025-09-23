@@ -2,8 +2,7 @@ import mongoose from "mongoose";
 
 
 //--farmer details schema
-const crop_details = new mongoose.Schema({
-    crop_id:{type:mongoose.Schema.Types.ObjectId, required:true, unique:true},
+const cropSchema = new mongoose.Schema({
     farmer_id:{type:mongoose.Schema.Types.ObjectId, ref:'farmer_details', unique:true},
     soil_type:{type:String},
     feild_size:{type:Number},
@@ -15,7 +14,7 @@ const crop_details = new mongoose.Schema({
 })
 
 
-const soil_report= new mongoose.Schema({
+const soilReportSchema= new mongoose.Schema({
     crop_id:{type:mongoose.Schema.Types.ObjectId, ref:'crop_details', unique:true},
     pH: { type: Number, required: true },
     nitrogen: { type: Number, required: true },
@@ -25,7 +24,7 @@ const soil_report= new mongoose.Schema({
     reportNotes: { type: String }
 })
 
-const activity_log = new mongoose.Schema({
+const activityLogSchema = new mongoose.Schema({
     crop_id:{type:mongoose.Schema.Types.ObjectId, ref:'crop_details', unique:true},
     date: { type: Date, default: Date.now },
     log: { type: String, required: true },
@@ -33,7 +32,9 @@ const activity_log = new mongoose.Schema({
 })
 
 
-module.exports= mongoose.model("soil_report", soilReportSchema);
-module.exports==mongoose.model("crop_details", crop_details);
+const crop = mongoose.model("crop", cropSchema);
+const soil_report = mongoose.model("soil_report", soilReportSchema);
+const activity_log = mongoose.model("activity_log", activityLogSchema);
 
+export { crop, soil_report,activity_log};
 

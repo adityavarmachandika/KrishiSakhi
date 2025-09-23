@@ -1,15 +1,31 @@
 import mongoose from "mongoose";
 
+import zod from "zod";
+import { z } from "zod";
+
 
 //--farmer details schema
-const farmer_details = new mongoose.Schema({
-    farmer_id:{type:mongoose.Schema.Types.ObjectId, required:true, unique:true},
+export const farmer = new mongoose.Schema({
     name:{type:String, required:true},
-    email:{type:String, required:true, unique:true},
+    email:{type:String, unique:true},
     phone:{type:String, required:true, unique:true},
     password:{type:String, required:true},
 })
 
 
+//-for zod validation
+    export const farmer_schema = z.object({
+    name: z.string().min(2, "Name must be at least 2 characters long"),
+    email: z.union([z.string().email("Invalid email address"), z.string().length(0)]).optional(),
+    phone: z.string().regex(/^\d{10}$/, "Phone must be 10 digits"),
+    password: z.string().min(6, "Password must be at least 6 characters long")
+    });
 
-module.exports=mongoose.model("farmer_details", farmer_details);
+export const farmer_details=mongoose.model("farmer_details",farmer)
+
+
+
+
+
+
+
