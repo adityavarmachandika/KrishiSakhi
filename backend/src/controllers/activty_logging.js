@@ -12,7 +12,4 @@ export const log_activity= async(req,res)=>{
         return res.status(500).json({error:saved_activity.error})
     }
     res.status(201).json({"activity logged":saved_activity})
-
-
-
 }
