@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { z } from "zod";
+import { optional, z } from "zod";
 
 //--farmer details schema
 const cropSchema = new mongoose.Schema({
@@ -32,7 +32,7 @@ const crop_validation_schema = z.object({
   soil_type: z.string().optional(),
   feild_size: z.number().optional(),
   irrigation_type: z.string().optional(),
-  previous_crops: z.array(z.string()).optional(),
+  previous_crop: z.string().optional(),
   location: z.object({
     latitude: z.number(),
     longitude: z.number(),
