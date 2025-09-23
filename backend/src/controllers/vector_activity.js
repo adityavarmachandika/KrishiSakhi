@@ -10,8 +10,8 @@ dotenv.config();
 
 const chroma = new ChromaClient({ path: process.env.CHROMA_PATH });
 
-async function getFarmerCollection(user_id) {
-  const collectionName = `farmer_${user_id}`;
+async function getFarmerCollection(farmer_id) {
+  const collectionName = `farmer_${farmer_id}`;
   return await chroma.getOrCreateCollection({ name: collectionName });
 }
 
@@ -21,11 +21,11 @@ async function getFarmerCollection(user_id) {
 
 export const queryActivity = async (req, res) => {
   try {
-    const { user_id, query, crop_id, summarize = true } = req.body;
-    if (!user_id || !query) return res.status(400).json({ error: "user_id and query are required" });
+    const {farmer_id, crop_id,query } = req.body;
+    if (!farmer_id || !query) return res.status(400).json({ error: "farmer_id and query are required" });
 
     const queryEmbedding = await get_embedding(query);
-    const collection = await getFarmerCollection(user_id);
+    const collection = await getFarmerCollection(farmer_id);
     const whereFilter = crop_id ? { crop_id: crop_id.toString() } : {};
 
     const results = await collection.query({
@@ -46,10 +46,6 @@ export const queryActivity = async (req, res) => {
     });
 
     const fullLogs = await activity.find({ _id: { $in: objectIds } }).sort({ date: -1 });
-
-    if (!summarize) {
-      return res.json({ matched_ids: matchedIds, results: fullLogs });
-    }
 
     const combinedText = fullLogs
       .map(l => `- ${l.log} (Crop Condition: ${l.crop_condition || "N/A"}, id: ${l._id})`)
