@@ -24,5 +24,4 @@ router.use("/chat",query_router)
 
 
 
-
 export default router;
