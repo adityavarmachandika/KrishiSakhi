@@ -15,6 +15,10 @@ async function getFarmerCollection(user_id) {
   return await chroma.getOrCreateCollection({ name: collectionName });
 }
 
+
+/* Query activity logs based on user input, returning full logs and a summary if requested */
+
+
 export const queryActivity = async (req, res) => {
   try {
     const { user_id, query, crop_id, summarize = true } = req.body;
@@ -50,6 +54,8 @@ export const queryActivity = async (req, res) => {
     const combinedText = fullLogs
       .map(l => `- ${l.log} (Crop Condition: ${l.crop_condition || "N/A"}, id: ${l._id})`)
       .join("\n");
+
+      //summarizing the text
 
     if (!combinedText) return res.json({ msg: "No matching logs to summarize." });
 
