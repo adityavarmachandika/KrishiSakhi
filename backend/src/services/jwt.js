@@ -6,7 +6,7 @@ export const jwt_token_generation=(farmer_details,res)=>{
     try{
     const payload = {
       userid: farmer_details._id,
-      username: farmer_details.name,
+      name: farmer_details.name,
       email: farmer_details.email,
       phone: farmer_details.phone,
     };

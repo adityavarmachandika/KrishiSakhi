@@ -11,9 +11,11 @@ export const UserProvider = ({ children }) => {
   const login = (token) => {
     try {
       const decoded = jwtDecode(token);
+      console.log('Decoded JWT:', decoded); // Debug log
+      
       const userData = {
-        id: decoded.userid,
-        name: decoded.username,
+        id: decoded.userid || decoded.id || decoded._id,
+        name: decoded.username || decoded.name,
         email: decoded.email,
         phone: decoded.phone
       };
@@ -41,8 +43,8 @@ export const UserProvider = ({ children }) => {
         // Check if token is still valid
         if (decoded.exp * 1000 > Date.now()) {
           setUser({
-            id: decoded.userid,
-            name: decoded.username,
+            id: decoded.userid || decoded.id || decoded._id,
+            name: decoded.username || decoded.name,
             email: decoded.email,
             phone: decoded.phone
           });
@@ -56,6 +58,17 @@ export const UserProvider = ({ children }) => {
         logout();
       }
     }
+
+    // Listen for logout events from API interceptor
+    const handleAuthLogout = () => {
+      logout();
+    };
+
+    window.addEventListener('auth:logout', handleAuthLogout);
+
+    return () => {
+      window.removeEventListener('auth:logout', handleAuthLogout);
+    };
   }, []);
 
   return (
