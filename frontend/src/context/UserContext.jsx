@@ -1,14 +1,16 @@
 import React, { createContext, useState, useEffect } from "react";
 import { jwtDecode } from "jwt-decode";
+import API from "./api";
 
 export const UserContext = createContext();
 
 export const UserProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [cropDetails, setCropDetails] = useState(null);
 
   // Function to handle login
-  const login = (token) => {
+  const login = async (token) => {
     try {
       const decoded = jwtDecode(token);
       console.log('Decoded JWT:', decoded); // Debug log
@@ -22,6 +24,11 @@ export const UserProvider = ({ children }) => {
       setUser(userData);
       setIsLoggedIn(true);
       localStorage.setItem("token", token);
+      
+      // Optionally fetch crop details after login
+      if (userData.id) {
+        await fetchCropDetails(userData.id);
+      }
     } catch (error) {
       console.error("Invalid token", error);
       logout();
@@ -32,7 +39,20 @@ export const UserProvider = ({ children }) => {
   const logout = () => {
     setUser(null);
     setIsLoggedIn(false);
+    setCropDetails(null);
     localStorage.removeItem("token");
+  };
+
+  // Function to fetch crop details
+  const fetchCropDetails = async (farmerId) => {
+    try {
+      const response = await API.get(`/crop/fetch_crop_details/${farmerId}`);
+      setCropDetails(response.data);
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching crop details:", error);
+      return null;
+    }
   };
 
   useEffect(() => {
@@ -42,13 +62,19 @@ export const UserProvider = ({ children }) => {
         const decoded = jwtDecode(token);
         // Check if token is still valid
         if (decoded.exp * 1000 > Date.now()) {
-          setUser({
+          const userData = {
             id: decoded.userid || decoded.id || decoded._id,
             name: decoded.username || decoded.name,
             email: decoded.email,
             phone: decoded.phone
-          });
+          };
+          setUser(userData);
           setIsLoggedIn(true);
+          
+          // Fetch crop details if user ID is available
+          if (userData.id) {
+            fetchCropDetails(userData.id);
+          }
         } else {
           // Token expired
           logout();
@@ -78,7 +104,10 @@ export const UserProvider = ({ children }) => {
       isLoggedIn, 
       setIsLoggedIn,
       login,
-      logout 
+      logout,
+      cropDetails,
+      setCropDetails,
+      fetchCropDetails 
     }}>
       {children}
     </UserContext.Provider>
