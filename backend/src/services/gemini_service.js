@@ -40,3 +40,23 @@ export const get_summary = async (textToSummarize) => {
     throw new Error('Failed to get a summary from the model.');
   }
 };
+
+
+export const chatWithGemini = async (userMessage) => {
+  if (!userMessage || typeof userMessage !== 'string' || userMessage.trim() === '') {
+    throw new Error('Invalid input for chat');
+  }
+
+  try {
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-pro' });
+
+    const result = await model.generateContent({
+      contents: [{ parts: [{ text: userMessage }] }]
+    });
+
+    return result.response.text().trim();
+  } catch (error) {
+    console.error('Gemini Chat Error:', error?.response?.data || error.message || error);
+    throw new Error('Failed to get chat response');
+  }
+};
