@@ -2,7 +2,6 @@
 import bcrypt from "bcrypt";
 import {user_login_service, user_signup_service} from "../services/user_auth.js";
 import { jwt_token_generation } from "../services/jwt.js";
-import { farmer } from "../models/farmer.js";
 
 
 export const user_signup = async (req, res) => {
@@ -14,7 +13,7 @@ export const user_signup = async (req, res) => {
 
     const new_farmer=await user_signup_service(input)
 
-    const token= await jwt_token_generation(new_farmer,res)
+    const token=  jwt_token_generation(new_farmer,res)
 
     const farmerWithToken = { ...new_farmer.toObject(), token };
 
