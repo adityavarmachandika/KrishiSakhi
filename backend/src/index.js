@@ -5,6 +5,7 @@ import router from "./router.js";
 import authMiddleware from "./middleware/jwt_middleware.js";
 import { url } from "zod";
 import { urlencoded } from "express";
+import './services/cron_notifications.js'
 
 
 

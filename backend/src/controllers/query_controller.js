@@ -1,6 +1,7 @@
 import { query as QueryModel } from "../models/query.js";
 import { queryActivityService } from "../services/summarize_log.js";
 import { chatWithGemini } from "../services/gemini_service.js";
+import { getCropDetailsText } from "../services/crop_details_to_text.js";
 
 export const query_controller = async (req, res) => {
   try {
@@ -26,19 +27,26 @@ export const query_controller = async (req, res) => {
       return res.status(status).json({ error: summary || "Error fetching activity logs" });
     }
 
+    const crop_context = crop_id ? await getCropDetailsText(crop_id) : "No crop details available";
+
     // Preparing contexts for Gemini
     const history_context = `Relevant farmer activity history:\n${summary}`;
     const weather_context = `Current weather: Sunny, 30°C, 60% humidity, no rain forecast for next 3 days.`;
-    // const crop_context=cro
+    
 
-    const systemPrompt = `
+const systemPrompt = `
 You are an expert agricultural assistant. Answer the user's query using the following context:
 
 User Query: ${query}
 
-Farmer Activity History: ${history_context}
+Farmer Activity History:
+${history_context}
 
-Current Weather Context: ${weather_context}
+Crop Context:
+${crop_context}
+
+Weather Context:
+${weather_context}
 
 If the context does not contain relevant info, answer based on your own knowledge.
 Make the answer brief and concise. If unsure, just say "I don't know". Do not fabricate answers.
