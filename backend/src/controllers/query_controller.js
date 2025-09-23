@@ -50,7 +50,7 @@ Make the answer brief and concise. If unsure, just say "I don't know". Do not fa
     await newQuery.save();
 
     
-    res.json({ reply: geminiResponse });
+    res.json({ results:newQuery});
   } catch (error) {
     console.error("Chat error:", error);
     res.status(500).json({ error: "Failed to generate response" });
