@@ -7,6 +7,7 @@ const cropSchema = new mongoose.Schema({
     soil_type:{type:String},
     feild_size:{type:Number},
     irrigation_type:{type:String},
+    present_crop:{type:String},
     previous_crops:{type:[String]},
     location: {
         latitude: { type: Number, required: true },
@@ -32,6 +33,7 @@ const crop_validation_schema = z.object({
   soil_type: z.string().optional(),
   feild_size: z.number().optional(),
   irrigation_type: z.string().optional(),
+  present_crop: z.string(),
   previous_crop: z.string().optional(),
   location: z.object({
     latitude: z.number(),
