@@ -20,20 +20,24 @@ const News = () => {
     // Simulate loading
     setTimeout(() => {
       setLoading(false);
-      setFilteredNews(LatestNews[0]?.articles || []);
+      // Flatten all articles from all news objects
+      const allArticles = LatestNews.flatMap(newsObj => newsObj.articles || []);
+      setFilteredNews(allArticles);
     }, 1000);
   }, []);
 
   useEffect(() => {
     // Filter news based on search query
+    const allArticles = LatestNews.flatMap(newsObj => newsObj.articles || []);
+    
     if (searchQuery.trim() === '') {
-      setFilteredNews(LatestNews[0]?.articles || []);
+      setFilteredNews(allArticles);
     } else {
-      const filtered = LatestNews[0]?.articles?.filter(article =>
+      const filtered = allArticles.filter(article =>
         article.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         article.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        article.source.name.toLowerCase().includes(searchQuery.toLowerCase())
-      ) || [];
+        article.source?.name?.toLowerCase().includes(searchQuery.toLowerCase())
+      );
       setFilteredNews(filtered);
     }
   }, [searchQuery]);
@@ -88,7 +92,7 @@ const News = () => {
             </div>
             <div>
               <span className="text-sm font-semibold text-gray-800 block">
-                {article.source.name}
+                {article.source?.name || 'Unknown Source'}
               </span>
               <div className="flex items-center gap-1 text-xs text-gray-500">
                 <FontAwesomeIcon icon={faCalendarAlt} className="text-xs" />
@@ -204,7 +208,7 @@ const News = () => {
             </div>
             <div>
               <div className="text-2xl font-bold text-blue-600 mb-2">
-                {new Set(filteredNews.map(article => article.source.name)).size}
+                {new Set(filteredNews.map(article => article.source?.name || 'Unknown')).size}
               </div>
               <div className="text-gray-600">News Sources</div>
             </div>

@@ -75,6 +75,49 @@ const LatestNews = [
       },
     ],
   },
+  {
+    "status": "ok",
+    "totalResults": 6,
+    "articles": [
+        {
+            "source": {
+                "id": null,
+                "name": "The Hindu BusinessLine"
+            },
+            "author": "G Naga Sridhar",
+            "title": "NABARD projects ₹2.43 lakh crore credit potential for Andhra Pradesh farm sector",
+            "description": "The National Bank for Agriculture and Rural Development (NABARD) has pegged the priority sector credit potential for Andhra Pradesh for the year 2025-26 at ₹2.43 lakh crore, with a significant focus on the farm credit and agriculture infrastructure.",
+            "url": "https://www.thehindubusinessline.com/economy/agri-business/nabard-projects-243-lakh-crore-credit-potential-for-ap-farm-sector/article67605969.ece",
+            "publishedAt": "2025-09-24T05:00:00Z",
+            "content": "The National Bank for Agriculture and Rural Development (NABARD) has pegged the priority sector credit potential for Andhra Pradesh at ₹2.43 lakh crore for the upcoming fiscal year, placing a strong emphasis on boosting the farm sector… [+1650 chars]"
+        },
+        {
+            "source": {
+                "id": null,
+                "name": "Krishi Jagran"
+            },
+            "author": "KJ Staff",
+            "title": "ICAR Develops Drought-Tolerant Chickpea Variety to Boost Farmer Incomes",
+            "description": "The Indian Council of Agricultural Research (ICAR) has successfully developed a new variety of chickpea that is drought-tolerant and resistant to fusarium wilt. This innovation is expected to significantly enhance crop yield and income for farmers in water-scarce regions.",
+            "url": "https://krishijagran.com/agriculture-world/icar-develops-drought-tolerant-chickpea-variety/",
+            "publishedAt": "2025-09-23T12:20:00Z",
+            "content": "In a major breakthrough for Indian agriculture, scientists at the Indian Council of Agricultural Research (ICAR) have developed a new chickpea variety with enhanced tolerance to drought conditions. The variety, Pusa JG 16… [+1400 chars]"
+        },
+        {
+            "source": {
+                "id": null,
+                "name": "Press Information Bureau"
+            },
+            "author": "Ministry of Agriculture & Farmers Welfare",
+            "title": "Government releases SOPs for use of Drones in Agriculture for crop protection and nutrient application",
+            "description": "To promote precision farming in the country, the Ministry of Agriculture & Farmers Welfare has released Standard Operating Procedures (SOPs) for the use of drones in spraying pesticides, soil nutrients, and crop assessment.",
+            "url": "https://pib.gov.in/PressReleasePage.aspx?PRID=1783226",
+            "publishedAt": "2025-09-23T09:45:00Z",
+            "content": "With the aim of making drone technology affordable to the farmers and other stakeholders of this sector, the Ministry of Agriculture and Farmers’ Welfare has released the Standard Operating Procedures (SOPs) for drone application… [+1900 chars]"
+        },
+        
+    ]
+}
 ];
 
 

@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/Card";
 import { Badge } from "./ui/Badge";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCloud, faSun, faCloudRain, faTint, faEye, faWind } from "@fortawesome/free-solid-svg-icons";
+import { UserContext } from "../context/UserContext";
 
 const getWeatherIcon = (condition, size = "w-6 h-6") => {
   switch (condition) {
@@ -33,11 +34,30 @@ const getUVIndexColor = (index) => {
 };
 
 export default function WeatherWidget() {
+  const { cropDetails } = useContext(UserContext);
   const [weatherData, setWeatherData] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const lat = 12.9629; // your latitude
-    const lon = 77.5775; // your longitude
+    const fetchWeatherData = async () => {
+      setIsLoading(true);
+      
+      // Get coordinates from cropDetails or use default values
+      let lat, lon;
+      
+      if (cropDetails && cropDetails.location && 
+          cropDetails.location.latitude && 
+          cropDetails.location.longitude) {
+        lat = cropDetails.location.latitude;
+        lon = cropDetails.location.longitude;
+        console.log('Using coordinates from cropDetails:', { lat, lon });
+      } else {
+        // Fallback to Bangalore coordinates
+        lat = 12.9629;
+        lon = 77.5775;
+        console.log('Using default coordinates (Bangalore):', { lat, lon });
+      }
+
     const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,weathercode,uv_index_max&timezone=auto`;
 
     fetch(url)
@@ -83,13 +103,24 @@ export default function WeatherWidget() {
             });
           });
       })
-      .catch((err) => console.error("Weather fetch error:", err));
-  }, []);
+      .catch((err) => {
+        console.error("Weather fetch error:", err);
+        setWeatherData(null);
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
+    };
 
-  if (!weatherData) {
+    fetchWeatherData();
+  }, [cropDetails]); // Re-fetch when cropDetails changes
+
+  if (isLoading || !weatherData) {
     return (
       <Card className="w-full max-w-md mx-auto lg:max-w-lg bg-white h-[620px] flex items-center justify-center">
-        <p className="text-gray-500">Loading weather...</p>
+        <p className="text-gray-500">
+          {isLoading ? 'Loading weather...' : 'Weather data unavailable'}
+        </p>
       </Card>
     );
   }
