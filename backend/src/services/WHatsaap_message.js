@@ -4,7 +4,7 @@ import axios from "axios";
 const API_KEY = process.env.WHATSAAP_API_KEY;
 
 export default async function sendTemplateMessage(to, bodyText) {
-    to=to+"91"  // Adding country code for India
+    to="91"+to  // Adding country code for India
   try {
     const response = await axios({
       method: "post",
