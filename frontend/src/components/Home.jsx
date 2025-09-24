@@ -95,12 +95,13 @@ const Home = () => {
             
             {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 mb-12">
+              <Link to={isLoggedIn ? "/chat" : "/login"}>
               <button className="group bg-green-600 text-white px-8 py-3 rounded-lg font-semibold shadow-sm hover:shadow-md hover:bg-green-700 transition-all duration-300 flex items-center justify-center">
                 <FontAwesomeIcon icon={faComments} className="mr-3" />
                 Start Chatting
                 <FontAwesomeIcon icon={faArrowRight} className="ml-2 group-hover:translate-x-1 transition-transform duration-300" />
               </button>
-              
+              </Link>
               <Link to={isLoggedIn ? "/activity-logging" : "/login"}>
                 <button className="group bg-white text-gray-700 px-8 py-3 rounded-lg font-semibold shadow-sm hover:shadow-md transition-all duration-300 border border-gray-200 hover:border-green-300 hover:text-green-700 flex items-center justify-center w-full">
                   <FontAwesomeIcon icon={faChartLine} className="mr-3" />

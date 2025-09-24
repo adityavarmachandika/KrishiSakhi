@@ -5,7 +5,7 @@ import { UserContext } from '../context/UserContext';
 import API from '../context/api';
 
 const ChatPage = () => {
-  const { user } = useContext(UserContext);
+  const { user, cropDetails } = useContext(UserContext);
   
   // Initialize with empty messages array
   const [displayedMessages, setDisplayedMessages] = useState([]);
@@ -16,6 +16,7 @@ const ChatPage = () => {
   const [isLoadingOlder, setIsLoadingOlder] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
   
   const messagesEndRef = useRef(null);
   const chatContainerRef = useRef(null);
@@ -74,6 +75,20 @@ const ChatPage = () => {
       }
     }
   }, [displayedMessages, isLoadingOlder]);
+
+  // Close date picker when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showDatePicker && !event.target.closest('.date-picker-container')) {
+        setShowDatePicker(false);
+      }
+    };
+
+    if (showDatePicker) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showDatePicker]);
 
   const formatDate = (date) => {
     const today = new Date();
@@ -147,6 +162,9 @@ const ChatPage = () => {
         return;
       }
 
+      console.log('User object:', JSON.stringify(user, null, 2)); // Debug log
+      console.log('User ID:', user.id); // Debug log
+
       const userMessage = {
         id: Date.now(),
         type: 'text',
@@ -159,40 +177,129 @@ const ChatPage = () => {
       const currentMessage = newMessage;
       setNewMessage('');
       setIsSending(true);
+      setIsTyping(true);
+
+      // Add typing indicator message
+      const typingMessage = {
+        id: 'typing-indicator',
+        type: 'typing',
+        content: '',
+        sender: 'ai',
+        timestamp: new Date(),
+      };
+      setDisplayedMessages(prev => [...prev, typingMessage]);
       
       try {
-        // Send query to backend
-        const response = await API.post('/query', {
-          farmer_id: user.id,
-          crop_id: null, // You can add crop_id logic if needed
-          question: currentMessage
-        });
+        // Get crop_id from cropDetails if available
+        let cropId = null;
+        console.log('Available crop details:', JSON.stringify(cropDetails, null, 2)); // Debug log
+        
+        if (cropDetails && Array.isArray(cropDetails) && cropDetails.length > 0) {
+          // If cropDetails is an array, get the first crop's ID
+          cropId = cropDetails[0]._id || cropDetails[0].id;
+        } else if (cropDetails && typeof cropDetails === 'object') {
+          // If cropDetails is an object, get its ID directly
+          cropId = cropDetails._id || cropDetails.id;
+        }
+        
+        // Ensure crop_id is a string if it exists, otherwise keep it null
+        if (cropId) {
+          cropId = String(cropId);
+        }
+        
+        console.log('Using crop_id:', cropId); // Debug log
+        console.log('API Base URL:', API.defaults.baseURL); // Debug log
+        
+        // Validate required fields
+        if (!user.id || !currentMessage.trim()) {
+          throw new Error('Missing required fields: farmer_id or query');
+        }
+        
+        // Ensure farmer_id is a string
+        const farmerId = String(user.id);
+        
+        console.log('Final farmer_id to send:', farmerId); // Debug log
+        console.log('Sending request to:', '/chat/query'); // Debug log
+        
+        // Create request payload - only include crop_id if it's valid
+        const requestPayload = {
+          farmer_id: farmerId,
+          query: currentMessage
+        };
+        
+        if (cropId) {
+          requestPayload.crop_id = cropId;
+        }
+        
+        console.log('Request payload:', JSON.stringify(requestPayload, null, 2)); // Debug log
 
-        // Add AI response to messages
+        // Send query to backend using the correct endpoint
+        const response = await API.post('/chat/query', requestPayload);
+
+        console.log('API Response:', JSON.stringify(response, null, 2)); // Debug log
+        console.log('Response data:', JSON.stringify(response.data, null, 2)); // Debug log
+
+        // Remove typing indicator
+        setDisplayedMessages(prev => prev.filter(msg => msg.id !== 'typing-indicator'));
+        
+        // Add AI response to messages - updated to match new API response structure
         const aiResponse = {
-          id: response.data.id,
+          id: response.data.results._id,
           type: 'text',
-          content: response.data.answer,
-          sender: 'llm',
-          timestamp: new Date(response.data.date),
+          content: response.data.results.answer,
+          sender: 'ai',
+          timestamp: new Date(response.data.results.date),
         };
         
         setDisplayedMessages(prev => [...prev, aiResponse]);
       } catch (error) {
         console.error('Error sending message:', error);
+        console.error('Error response:', JSON.stringify(error.response, null, 2)); // Debug log
+        console.error('Error message:', error.message); // Debug log
+        
+        // Remove typing indicator on error
+        setDisplayedMessages(prev => prev.filter(msg => msg.id !== 'typing-indicator'));
+        
+        let errorMessage = 'Sorry, I encountered an error. Please try again.';
+        
+        if (error.response) {
+          // Server responded with error status
+          console.error('Server error status:', error.response.status);
+          console.error('Server error data:', JSON.stringify(error.response.data, null, 2));
+          
+          if (error.response.status === 404) {
+            errorMessage = 'Chat service not found. Please check if the backend is running.';
+          } else if (error.response.status === 400) {
+            const serverError = error.response.data?.error || 'Invalid request format';
+            errorMessage = `${serverError}`;
+            console.error('400 Error details:', JSON.stringify(error.response.data, null, 2));
+          } else if (error.response.status === 500) {
+            errorMessage = 'Server error occurred. Please try again later.';
+          } else if (error.response.status === 401) {
+            errorMessage = 'Authentication failed. Please login again.';
+          } else {
+            errorMessage = `Server error (${error.response.status}). Please try again.`;
+          }
+        } else if (error.request) {
+          // Request was made but no response received
+          console.error('No response received:', error.request);
+          errorMessage = 'Unable to connect to server. Please check your connection.';
+        }
+        
         toast.error('Failed to send message. Please try again.');
         
         // Add error message to chat
-        const errorMessage = {
+        const errorMsg = {
           id: Date.now() + 1,
           type: 'text',
-          content: 'Sorry, I encountered an error. Please try again.',
-          sender: 'llm',
+          content: errorMessage,
+          sender: 'ai',
           timestamp: new Date(),
         };
-        setDisplayedMessages(prev => [...prev, errorMessage]);
+        setDisplayedMessages(prev => [...prev, errorMsg]);
       } finally {
         setIsSending(false);
+        setIsTyping(false);
       }
     }
   };
@@ -259,7 +366,7 @@ const ChatPage = () => {
             id: Date.now() + 1,
             type: 'text',
             content: generateLLMResponseToVoice(mockTranscription),
-            sender: 'llm',
+            sender: 'ai',
             timestamp: new Date(),
           };
           setDisplayedMessages(prev => [...prev, llmResponse]);
@@ -301,6 +408,7 @@ const ChatPage = () => {
 
   const renderMessage = (message) => {
     const isUser = message.sender === 'user';
+    const isAI = message.sender === 'ai' || message.sender === 'llm';
     
     return (
       <div 
@@ -309,16 +417,27 @@ const ChatPage = () => {
         className={`flex mb-4 animate-fade-in ${isUser ? 'justify-end' : 'justify-start'}`}
       >
         <div 
-          className={`max-w-xs lg:max-w-md xl:max-w-lg px-4 py-3 rounded-2xl shadow-md transition-all duration-200 hover:shadow-lg ${
+          className={`max-w-xs lg:max-w-md xl:max-w-lg px-4 py-3 rounded-2xl shadow-sm transition-all duration-200 hover:shadow-md ${
             isUser 
-              ? 'bg-blue-500 text-white rounded-br-md' 
-              : 'bg-gray-100 text-gray-800 rounded-bl-md'
+              ? 'bg-[#365949] text-white rounded-br-md' 
+              : 'bg-white text-gray-800 rounded-bl-md border border-gray-100'
           }`}
         >
+          {message.type === 'typing' && (
+            <div className="flex items-center space-x-2">
+              <div className="flex space-x-1">
+                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+              </div>
+              <span className="text-xs text-gray-500">AI is typing...</span>
+            </div>
+          )}
+
           {message.type === 'text' && (
             <div>
-              <p className="text-sm leading-relaxed">{message.content}</p>
-              <p className={`text-xs mt-2 ${isUser ? 'text-blue-100' : 'text-gray-500'}`}>
+              <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
+              <p className={`text-xs mt-2 ${isUser ? 'text-green-100' : 'text-gray-500'}`}>
                 {formatTime(message.timestamp)}
               </p>
             </div>
@@ -331,7 +450,7 @@ const ChatPage = () => {
                 alt="Shared image" 
                 className="rounded-lg max-w-full h-auto mb-2"
               />
-              <p className={`text-xs ${isUser ? 'text-blue-100' : 'text-gray-500'}`}>
+              <p className={`text-xs ${isUser ? 'text-green-100' : 'text-gray-500'}`}>
                 {formatTime(message.timestamp)}
               </p>
             </div>
@@ -341,14 +460,14 @@ const ChatPage = () => {
             <div className="flex items-center space-x-3">
               <div className="flex-shrink-0">
                 <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                  isUser ? 'bg-blue-400' : 'bg-gray-200'
+                  isUser ? 'bg-[#2d4a3a]' : 'bg-gray-200'
                 }`}>
                   <Download className="w-5 h-5" />
                 </div>
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium truncate">{message.content}</p>
-                <p className={`text-xs ${isUser ? 'text-blue-100' : 'text-gray-500'}`}>
+                <p className={`text-xs ${isUser ? 'text-green-100' : 'text-gray-500'}`}>
                   {formatTime(message.timestamp)}
                 </p>
               </div>
@@ -363,7 +482,7 @@ const ChatPage = () => {
                   onClick={() => toggleAudioPlayback(message.id)}
                   className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
                     isUser 
-                      ? 'bg-blue-400 hover:bg-blue-300' 
+                      ? 'bg-green-400 hover:bg-green-300' 
                       : 'bg-gray-200 hover:bg-gray-300'
                   }`}
                 >
@@ -375,10 +494,10 @@ const ChatPage = () => {
                 </button>
                 <div className="flex-1">
                   <div className={`w-24 h-2 rounded-full ${
-                    isUser ? 'bg-blue-400' : 'bg-gray-300'
+                    isUser ? 'bg-green-400' : 'bg-gray-300'
                   }`}>
                     <div className={`h-full rounded-full transition-all duration-300 ${
-                      isUser ? 'bg-blue-200' : 'bg-gray-500'
+                      isUser ? 'bg-green-200' : 'bg-gray-500'
                     } ${playingAudio === message.id ? 'w-1/3' : 'w-0'}`} />
                   </div>
                 </div>
@@ -390,10 +509,10 @@ const ChatPage = () => {
                   borderColor: isUser ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)'
                 }}>
                   <p className={`text-sm leading-relaxed ${
-                    isUser ? 'text-blue-100' : 'text-gray-600'
+                    isUser ? 'text-green-100' : 'text-gray-600'
                   }`}>
                     <span className={`font-medium ${
-                      isUser ? 'text-blue-100' : 'text-gray-500'
+                      isUser ? 'text-green-100' : 'text-gray-500'
                     }`}>
                       Transcribed:
                     </span>
@@ -403,7 +522,7 @@ const ChatPage = () => {
               )}
               
               {/* Timestamp */}
-              <p className={`text-xs ${isUser ? 'text-blue-100' : 'text-gray-500'}`}>
+              <p className={`text-xs ${isUser ? 'text-green-100' : 'text-gray-500'}`}>
                 {formatTime(message.timestamp)}
               </p>
             </div>
@@ -416,176 +535,179 @@ const ChatPage = () => {
   const messageGroups = groupMessagesByDate(displayedMessages);
   const availableDates = getAvailableDates();
 
+  // Add custom CSS for animations
+  const customStyles = `
+    <style>
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      .animate-fade-in {
+        animation: fadeIn 0.3s ease-out;
+      }
+      @keyframes bounce {
+        0%, 80%, 100% { transform: scale(0); opacity: 0.7; }
+        40% { transform: scale(1); opacity: 1; }
+      }
+      .animate-bounce {
+        animation: bounce 1.4s infinite;
+      }
+    </style>
+  `;
+
   return (
-    <div className="flex flex-col h-screen bg-white">
-      {/* Header with Date Picker */}
-      <div className="border-b border-gray-200 bg-white px-4 py-3">
-        <div className="flex items-center justify-between">
-          <h1 className="text-lg font-semibold text-gray-900">Chat</h1>
-          
-          {/* Date Picker Button */}
-          <div className="relative">
-            <button
-              onClick={() => setShowDatePicker(!showDatePicker)}
-              className="flex items-center space-x-2 px-3 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
-            >
-              <Calendar className="w-4 h-4" />
-              <span>Jump to Date</span>
-            </button>
+    <>
+      <div dangerouslySetInnerHTML={{ __html: customStyles }} />
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 pt-24">
+      <div className="max-w-4xl mx-auto p-4 md:p-6 flex flex-col" style={{ height: 'calc(100vh - 6rem)' }}>
+        {/* Header */}
+        <div className="bg-white rounded-t-xl shadow-sm p-4 md:p-6 flex-shrink-0">
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            <div className="flex flex-col">
+              <h1 className="text-2xl md:text-3xl font-bold text-[#365949]">AI Chat Assistant</h1>
+              {cropDetails && (
+                <p className="text-sm text-gray-600 mt-1">
+                  {Array.isArray(cropDetails) && cropDetails.length > 0 
+                    ? `Discussing: ${cropDetails[0].crop_type || cropDetails[0].name || 'Your crop'}`
+                    : cropDetails.crop_type || cropDetails.name || 'Your crop'
+                  }
+                </p>
+              )}
+            </div>
             
-            {/* Date Picker Dropdown */}
-            {showDatePicker && (
-              <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
-                <div className="px-3 py-2 text-xs font-semibold text-gray-500 border-b border-gray-100">
-                  Select a date
-                </div>
-                <div className="max-h-64 overflow-y-auto">
-                  {availableDates.map((date) => (
-                    <button
-                      key={date.dateString}
-                      onClick={() => scrollToDate(date.dateString)}
-                      className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                    >
-                      {date.displayName}
-                    </button>
-                  ))}
+            {/* Date Navigation */}
+            <div className="flex items-center space-x-3">
+              <div className="relative date-picker-container">
+                <button
+                  onClick={() => setShowDatePicker(!showDatePicker)}
+                  className="flex items-center space-x-2 px-3 md:px-4 py-2 bg-[#365949] hover:bg-[#2d4a3a] text-white rounded-lg transition-colors"
+                >
+                  <Calendar className="w-4 h-4" />
+                  <span className="text-xs md:text-sm font-medium hidden sm:inline">Jump to Date</span>
+                </button>
+                
+                {/* Date Picker Dropdown */}
+                {showDatePicker && messageGroups.length > 0 && (
+                  <div className="absolute right-0 top-full mt-2 bg-white border border-gray-200 rounded-lg shadow-md z-10 min-w-[200px]">
+                    <div className="max-h-60 overflow-y-auto">
+                      <div className="p-2">
+                        <div className="text-xs font-medium text-gray-500 px-3 py-2">Available Dates</div>
+                        {messageGroups.map((group) => (
+                          <button
+                            key={group.date}
+                            onClick={() => scrollToDate(group.date)}
+                            className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 rounded transition-colors"
+                          >
+                            {formatDate(group.date)}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Chat Container */}
+        <div className="bg-white rounded-b-xl shadow-sm overflow-hidden flex flex-col flex-1 min-h-0">
+          {/* Chat Messages Area */}
+          <div 
+            ref={chatContainerRef}
+            className="flex-1 overflow-y-auto px-6 py-4 space-y-4"
+          >
+            {/* Loading Spinner */}
+            {isLoadingOlder && (
+              <div className="flex justify-center py-6">
+                <div className="flex items-center justify-center">
+                  <div className="w-8 h-8 border-3 border-gray-300 border-t-[#365949] rounded-full animate-spin"></div>
                 </div>
               </div>
             )}
-          </div>
-        </div>
-      </div>
 
-      {/* Chat Messages Area */}
-      <div 
-        ref={chatContainerRef}
-        className="flex-1 overflow-y-auto px-4 py-6 space-y-6"
-      >
-        {/* Loading Spinner */}
-        {isLoadingOlder && (
-          <div className="flex justify-center py-6 animate-fade-in">
-            <div className="flex items-center justify-center">
-              <div className="w-8 h-8 border-3 border-gray-300 border-t-blue-500 rounded-full animate-spin"></div>
-            </div>
-          </div>
-        )}
-
-        {messageGroups.map((group, groupIndex) => (
-          <div key={groupIndex} className="animate-fade-in">
-            {/* Date Divider */}
-            <div 
-              ref={(el) => {
-                if (el) dateRefs.current[group.date] = el;
-              }}
-              className="flex items-center justify-center my-6"
-            >
-              <div className="flex-1 h-px bg-gray-200"></div>
-              <div className="px-4 py-2 bg-gray-100 text-gray-500 text-xs font-medium rounded-full">
-                {formatDate(group.date)}
+            {messageGroups.map((group, groupIndex) => (
+              <div key={groupIndex}>
+                {/* Date Divider */}
+                <div 
+                  ref={(el) => {
+                    if (el) dateRefs.current[group.date] = el;
+                  }}
+                  className="flex items-center justify-center my-6"
+                >
+                  <div className="flex-1 h-px bg-gray-200"></div>
+                  <div className="px-4 py-2 bg-gray-100 text-gray-500 text-xs font-medium rounded-full">
+                    {formatDate(group.date)}
+                  </div>
+                  <div className="flex-1 h-px bg-gray-200"></div>
+                </div>
+                
+                {/* Messages for this date */}
+                <div className="space-y-4">
+                  {group.messages.map(renderMessage)}
+                </div>
               </div>
-              <div className="flex-1 h-px bg-gray-200"></div>
-            </div>
-            
-            {/* Messages for this date */}
-            <div>
-              {group.messages.map(renderMessage)}
-            </div>
+            ))}
+            <div ref={messagesEndRef} />
           </div>
-        ))}
-        <div ref={messagesEndRef} />
-      </div>
 
-      {/* Chat Input Footer */}
-      <div className="border-t border-gray-200 bg-white p-4">
-        <div className="flex items-end space-x-3">
-          {/* Add Files Button */}
-          <button
-            onClick={handleFileUpload}
-            className="flex-shrink-0 w-10 h-10 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center transition-colors"
-          >
-            <Plus className="w-5 h-5 text-gray-600" />
-          </button>
+          {/* Chat Input Footer */}
+          <div className="border-t border-gray-100 bg-white p-4 md:p-6 flex-shrink-0">
+            <div className="flex items-end space-x-4">
+              {/* Input Field Container */}
+              <div className="flex-1 relative">
+                <div className="flex items-end bg-gray-50 rounded-2xl border-2 border-gray-100 focus-within:border-[#365949] focus-within:bg-white transition-all">
+                  <textarea
+                    value={newMessage}
+                    onChange={(e) => setNewMessage(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    placeholder={isSending ? "Sending..." : "Ask me anything about farming..."}
+                    rows="1"
+                    disabled={isSending}
+                    className="flex-1 bg-transparent px-6 py-4 text-sm resize-none outline-none max-h-32 min-h-[3rem] disabled:opacity-50 placeholder:text-gray-400"
+                    style={{ 
+                      scrollbarWidth: 'thin',
+                      scrollbarColor: '#CBD5E0 transparent' 
+                    }}
+                  />
+                  
+                  {/* Microphone Button */}
+                  <button
+                    onClick={toggleRecording}
+                    className={`flex-shrink-0 w-10 h-10 mx-3 mb-2 rounded-full flex items-center justify-center transition-all ${
+                      isRecording 
+                        ? 'bg-red-500 hover:bg-red-600 text-white animate-pulse' 
+                        : 'bg-gray-200 hover:bg-gray-300 text-gray-600'
+                    }`}
+                  >
+                    <Mic className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
 
-          {/* Input Field Container */}
-          <div className="flex-1 relative">
-            <div className="flex items-end bg-gray-100 rounded-xl border border-gray-200 focus-within:border-blue-300 focus-within:ring-2 focus-within:ring-blue-100 transition-all">
-              <textarea
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder={isSending ? "Sending..." : "Type a message..."}
-                rows="1"
-                disabled={isSending}
-                className="flex-1 bg-transparent px-4 py-3 text-sm resize-none outline-none max-h-32 min-h-[2.5rem] disabled:opacity-50"
-                style={{ 
-                  scrollbarWidth: 'thin',
-                  scrollbarColor: '#CBD5E0 transparent' 
-                }}
-              />
-              
-              {/* Microphone Button */}
+              {/* Send Button */}
               <button
-                onClick={toggleRecording}
-                className={`flex-shrink-0 w-8 h-8 mx-2 mb-2 rounded-full flex items-center justify-center transition-all ${
-                  isRecording 
-                    ? 'bg-red-500 hover:bg-red-600 text-white animate-pulse' 
-                    : 'bg-gray-200 hover:bg-gray-300 text-gray-600'
+                onClick={sendMessage}
+                disabled={!newMessage.trim() || isSending}
+                className={`flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center transition-all transform hover:scale-105 ${
+                  newMessage.trim() && !isSending
+                    ? 'bg-[#365949] hover:bg-[#2d4a3a] text-white shadow-md hover:shadow-lg'
+                    : 'bg-gray-200 text-gray-400 cursor-not-allowed'
                 }`}
               >
-                <Mic className="w-4 h-4" />
+                {isSending ? (
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <Send className="w-5 h-5" />
+                )}
               </button>
             </div>
           </div>
-
-          {/* Send Button */}
-          <button
-            onClick={sendMessage}
-            disabled={!newMessage.trim() || isSending}
-            className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center transition-all ${
-              newMessage.trim() && !isSending
-                ? 'bg-blue-500 hover:bg-blue-600 text-white shadow-md hover:shadow-lg'
-                : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-            }`}
-          >
-            {isSending ? (
-              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-            ) : (
-              <Send className="w-5 h-5" />
-            )}
-          </button>
+        </div>
         </div>
       </div>
+    </>
 
-      {/* Click outside to close date picker */}
-      {showDatePicker && (
-        <div 
-          className="fixed inset-0 z-40" 
-          onClick={() => setShowDatePicker(false)}
-        />
-      )}
 
-      <style jsx>{`
-        @keyframes fade-in {
-          from {
-            opacity: 0;
-            transform: translateY(10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        
-        .animate-fade-in {
-          animation: fade-in 0.3s ease-out forwards;
-        }
-
-        .border-3 {
-          border-width: 3px;
-        }
-      `}</style>
-    </div>
   );
-};
-
-export default ChatPage;
+};export default ChatPage;

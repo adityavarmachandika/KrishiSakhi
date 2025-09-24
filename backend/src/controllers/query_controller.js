@@ -21,7 +21,7 @@ export const query_controller = async (req, res) => {
     await newQuery.save();
 
     // Fetching relevant activity logs and summarize
-    const { status, matched_ids, results, summary } = await queryActivityService(farmer_id, query, crop_id);
+    const { status, matched_ids, results, summary } = await queryActivityService(farmer_id, crop_id, query);
 
     if (status !== 200) {
       return res.status(status).json({ error: summary || "Error fetching activity logs" });

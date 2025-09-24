@@ -10,6 +10,7 @@ import { ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 import Crop_Details from './components/Crop_Details'
 import Activity_Logging from './components/Activity_Logging'
+import ChatPage from './components/ChatPage'
 
 function App() {
 
@@ -23,6 +24,7 @@ function App() {
         <Route path='/news' element={<News/>}/>
         <Route path='/crop-details' element={<Crop_Details/>}/>
         <Route path='/activity-logging' element={<Activity_Logging/>}/>
+        <Route path='/chat' element={<ChatPage/>}/>
         
       </Routes>
       <ToastContainer
