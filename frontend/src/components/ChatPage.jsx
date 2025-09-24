@@ -1,91 +1,21 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useContext } from 'react';
 import { Plus, Send, Mic, Download, Play, Pause, Calendar } from 'lucide-react';
+import { toast } from 'react-toastify';
+import { UserContext } from '../context/UserContext';
+import API from '../context/api';
 
 const ChatPage = () => {
-  // Generate more sample messages for infinite scroll demo
-  const generateMessages = (count, startId = 1, startDate = new Date()) => {
-    const messages = [];
-    const senders = ['user', 'llm'];
-    const messageTypes = ['text', 'image', 'file', 'voice'];
-    const textMessages = [
-      'Hey! How are you doing today?',
-      'Hello! I\'m doing great, thank you for asking. How can I help you today?',
-      'That sounds interesting, tell me more about it.',
-      'I understand your point. Let me think about this.',
-      'Thanks for sharing that with me.',
-      'Could you provide more details about that?',
-      'That\'s a great question! Let me help you with that.',
-      'I appreciate your patience while I work on this.',
-      'Here\'s what I found based on your request.',
-      'Is there anything else you\'d like to know?'
-    ];
-
-    for (let i = 0; i < count; i++) {
-      const messageDate = new Date(startDate);
-      messageDate.setMinutes(messageDate.getMinutes() - (count - i) * 15);
-      
-      const messageType = i % 15 === 0 ? messageTypes[Math.floor(Math.random() * 4)] : 'text';
-      let content = '';
-      let transcription = null;
-      
-      switch (messageType) {
-        case 'text':
-          content = textMessages[Math.floor(Math.random() * textMessages.length)];
-          break;
-        case 'image':
-          content = 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=300&h=200&fit=crop';
-          break;
-        case 'file':
-          content = `document-${i}.pdf`;
-          break;
-        case 'voice':
-          content = `voice-message-${i}.mp3`;
-          // Add mock transcription for voice messages
-          transcription = textMessages[Math.floor(Math.random() * textMessages.length)];
-          break;
-      }
-
-      messages.push({
-        id: startId + i,
-        type: messageType,
-        content,
-        transcription,
-        sender: senders[i % 2],
-        timestamp: messageDate,
-      });
-    }
-    
-    return messages;
-  };
-
-  // Initialize with recent messages
-  const [allMessages] = useState(() => {
-    const now = new Date();
-    const messages = [];
-    
-    // Generate messages for last 7 days
-    for (let day = 6; day >= 0; day--) {
-      const date = new Date(now);
-      date.setDate(date.getDate() - day);
-      date.setHours(9, 0, 0, 0);
-      
-      const dayMessages = generateMessages(15, messages.length + 1, date);
-      messages.push(...dayMessages);
-    }
-    
-    return messages;
-  });
-
-  const [displayedMessages, setDisplayedMessages] = useState(() => {
-    // Initially show only the last 30 messages
-    return allMessages.slice(-30);
-  });
+  const { user } = useContext(UserContext);
+  
+  // Initialize with empty messages array
+  const [displayedMessages, setDisplayedMessages] = useState([]);
 
   const [newMessage, setNewMessage] = useState('');
   const [isRecording, setIsRecording] = useState(false);
   const [playingAudio, setPlayingAudio] = useState(null);
   const [isLoadingOlder, setIsLoadingOlder] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [isSending, setIsSending] = useState(false);
   
   const messagesEndRef = useRef(null);
   const chatContainerRef = useRef(null);
@@ -109,46 +39,10 @@ const ChatPage = () => {
   };
 
   const loadOlderMessages = useCallback(async () => {
-    if (isLoadingOlder) return;
-    
-    const currentFirstMessage = displayedMessages[0];
-    if (!currentFirstMessage) return;
-    
-    const firstMessageIndex = allMessages.findIndex(msg => msg.id === currentFirstMessage.id);
-    if (firstMessageIndex <= 0) return; // No more messages to load
-    
-    setIsLoadingOlder(true);
-    
-    // Store current scroll position and first visible message
-    const container = chatContainerRef.current;
-    const previousScrollHeight = container.scrollHeight;
-    const previousScrollTop = container.scrollTop;
-    
-    // Find the first visible message element to use as anchor
-    const firstVisibleMessage = container.querySelector('[data-message-id]');
-    const anchorMessageId = firstVisibleMessage?.getAttribute('data-message-id');
-    
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // Load 20 more messages
-    const startIndex = Math.max(0, firstMessageIndex - 20);
-    const olderMessages = allMessages.slice(startIndex, firstMessageIndex);
-    
-    setDisplayedMessages(prev => [...olderMessages, ...prev]);
-    
-    // Restore scroll position after DOM updates
-    requestAnimationFrame(() => {
-      const container = chatContainerRef.current;
-      const newScrollHeight = container.scrollHeight;
-      const heightDifference = newScrollHeight - previousScrollHeight;
-      
-      // Adjust scroll position to maintain visual position
-      container.scrollTop = previousScrollTop + heightDifference;
-      
-      setIsLoadingOlder(false);
-    });
-  }, [displayedMessages, allMessages, isLoadingOlder]);
+    // For now, we'll disable loading older messages since we're starting fresh
+    // You can implement this later by fetching historical queries from the backend
+    return;
+  }, []);
 
   // Infinite scroll detection
   useEffect(() => {
@@ -239,16 +133,21 @@ const ChatPage = () => {
   };
 
   const getAvailableDates = () => {
-    const messageGroups = groupMessagesByDate(allMessages);
+    const messageGroups = groupMessagesByDate(displayedMessages);
     return messageGroups.map(group => ({
       dateString: group.date,
       displayName: formatDate(group.date)
     }));
   };
 
-  const sendMessage = () => {
-    if (newMessage.trim()) {
-      const message = {
+  const sendMessage = async () => {
+    if (newMessage.trim() && !isSending) {
+      if (!user?.id) {
+        toast.error('Please login to send messages');
+        return;
+      }
+
+      const userMessage = {
         id: Date.now(),
         type: 'text',
         content: newMessage,
@@ -256,20 +155,45 @@ const ChatPage = () => {
         timestamp: new Date(),
       };
       
-      setDisplayedMessages(prev => [...prev, message]);
+      setDisplayedMessages(prev => [...prev, userMessage]);
+      const currentMessage = newMessage;
       setNewMessage('');
+      setIsSending(true);
       
-      // Simulate LLM response
-      setTimeout(() => {
-        const llmResponse = {
+      try {
+        // Send query to backend
+        const response = await API.post('/query', {
+          farmer_id: user.id,
+          crop_id: null, // You can add crop_id logic if needed
+          question: currentMessage
+        });
+
+        // Add AI response to messages
+        const aiResponse = {
+          id: response.data.id,
+          type: 'text',
+          content: response.data.answer,
+          sender: 'llm',
+          timestamp: new Date(response.data.date),
+        };
+        
+        setDisplayedMessages(prev => [...prev, aiResponse]);
+      } catch (error) {
+        console.error('Error sending message:', error);
+        toast.error('Failed to send message. Please try again.');
+        
+        // Add error message to chat
+        const errorMessage = {
           id: Date.now() + 1,
           type: 'text',
-          content: 'Thank you for your message! I\'ve received it and I\'m processing your request.',
+          content: 'Sorry, I encountered an error. Please try again.',
           sender: 'llm',
           timestamp: new Date(),
         };
-        setDisplayedMessages(prev => [...prev, llmResponse]);
-      }, 1000);
+        setDisplayedMessages(prev => [...prev, errorMessage]);
+      } finally {
+        setIsSending(false);
+      }
     }
   };
 
@@ -589,9 +513,10 @@ const ChatPage = () => {
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder="Type a message..."
+                placeholder={isSending ? "Sending..." : "Type a message..."}
                 rows="1"
-                className="flex-1 bg-transparent px-4 py-3 text-sm resize-none outline-none max-h-32 min-h-[2.5rem]"
+                disabled={isSending}
+                className="flex-1 bg-transparent px-4 py-3 text-sm resize-none outline-none max-h-32 min-h-[2.5rem] disabled:opacity-50"
                 style={{ 
                   scrollbarWidth: 'thin',
                   scrollbarColor: '#CBD5E0 transparent' 
@@ -615,14 +540,18 @@ const ChatPage = () => {
           {/* Send Button */}
           <button
             onClick={sendMessage}
-            disabled={!newMessage.trim()}
+            disabled={!newMessage.trim() || isSending}
             className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center transition-all ${
-              newMessage.trim()
+              newMessage.trim() && !isSending
                 ? 'bg-blue-500 hover:bg-blue-600 text-white shadow-md hover:shadow-lg'
                 : 'bg-gray-200 text-gray-400 cursor-not-allowed'
             }`}
           >
-            <Send className="w-5 h-5" />
+            {isSending ? (
+              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <Send className="w-5 h-5" />
+            )}
           </button>
         </div>
       </div>
