@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { Link } from 'react-router-dom';
+import { UserContext } from '../context/UserContext';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faComments, 
@@ -23,9 +24,9 @@ import Updates from './Updates';
 import { LatestNews } from '../constants';
 
 const Home = () => {
+  const { user, isLoggedIn } = useContext(UserContext);
   const [isVisible, setIsVisible] = useState(false);
   const [hoveredCard, setHoveredCard] = useState(null);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
     setIsVisible(true);
@@ -94,33 +95,22 @@ const Home = () => {
             
             {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 mb-12">
+              <Link to={isLoggedIn ? "/chat" : "/login"}>
               <button className="group bg-green-600 text-white px-8 py-3 rounded-lg font-semibold shadow-sm hover:shadow-md hover:bg-green-700 transition-all duration-300 flex items-center justify-center">
                 <FontAwesomeIcon icon={faComments} className="mr-3" />
                 Start Chatting
                 <FontAwesomeIcon icon={faArrowRight} className="ml-2 group-hover:translate-x-1 transition-transform duration-300" />
               </button>
-              
-              <button className="group bg-white text-gray-700 px-8 py-3 rounded-lg font-semibold shadow-sm hover:shadow-md transition-all duration-300 border border-gray-200 hover:border-green-300 hover:text-green-700 flex items-center justify-center">
-                <FontAwesomeIcon icon={faChartLine} className="mr-3" />
-                Track Activities
-              </button>
+              </Link>
+              <Link to={isLoggedIn ? "/activity-logging" : "/login"}>
+                <button className="group bg-white text-gray-700 px-8 py-3 rounded-lg font-semibold shadow-sm hover:shadow-md transition-all duration-300 border border-gray-200 hover:border-green-300 hover:text-green-700 flex items-center justify-center w-full">
+                  <FontAwesomeIcon icon={faChartLine} className="mr-3" />
+                  Track Activities
+                </button>
+              </Link>
             </div>
 
             {/* Stats */}
-            {/* <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-              {stats.map((stat, index) => (
-                <div key={index} className="text-center group cursor-pointer">
-                  <div className="bg-white rounded-lg p-4 shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
-                    <FontAwesomeIcon 
-                      icon={stat.icon} 
-                      className="text-2xl text-green-600 mb-2 group-hover:scale-110 transition-transform duration-300" 
-                    />
-                    <div className="text-2xl font-bold text-gray-900">{stat.number}</div>
-                    <div className="text-sm text-gray-600">{stat.label}</div>
-                  </div>
-                </div>
-              ))}
-            </div> */}
           </div>
 
           {/* Right Image */}
