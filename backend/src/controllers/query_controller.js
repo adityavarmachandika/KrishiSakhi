@@ -2,6 +2,8 @@ import { query as QueryModel } from "../models/query.js";
 import { queryActivityService } from "../services/summarize_log.js";
 import { chatWithGemini } from "../services/gemini_service.js";
 import { getCropDetailsText } from "../services/crop_details_to_text.js";
+import { all_queries_service } from "../services/all_queries.js";
+
 
 export const query_controller = async (req, res) => {
   try {
@@ -21,7 +23,7 @@ export const query_controller = async (req, res) => {
     await newQuery.save();
 
     // Fetching relevant activity logs and summarize
-    const { status, matched_ids, results, summary } = await queryActivityService(farmer_id, query, crop_id);
+    const { status, matched_ids, results, summary } = await queryActivityService(farmer_id, crop_id, query);
 
     if (status !== 200) {
       return res.status(status).json({ error: summary || "Error fetching activity logs" });
@@ -64,3 +66,24 @@ Make the answer brief and concise. If unsure, just say "I don't know". Do not fa
     res.status(500).json({ error: "Failed to generate response" });
   }
 };
+
+
+export const fetch_all_queries= async (req,res)=>{
+    const farmer_id= req.params.farmer_id;
+
+    if(!farmer_id){
+      return res.status(400).json({error:"farmer_id is required"})
+    }
+
+    try{
+      const queries= await all_queries_service(farmer_id)
+      if(queries.success===false){
+        return res.status(500).json({error:queries.error})
+      }
+      res.status(200).json(queries)
+    }
+    catch(err){
+      console.error("Error in fetch_all_queries controller:", err);
+      return res.status(500).json({ error: "Internal server error" });
+    }
+}

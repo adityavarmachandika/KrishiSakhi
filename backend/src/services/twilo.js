@@ -8,8 +8,7 @@ const accountSid = process.env.TWILIO_ACCOUNT_SID;
 const authToken = process.env.TWILIO_AUTH_TOKEN;
 const client = twilio(accountSid, authToken);
 
-export async function create_message(body, phone_number) {
-  const fullNumber = "+91" + phone_number;
+export async function createMessage(body, phone_number) {
 
   try {
     const message = await client.messages.create({
