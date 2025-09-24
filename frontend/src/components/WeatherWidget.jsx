@@ -1,27 +1,8 @@
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/Card";
 import { Badge } from "./ui/Badge";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCloud, faSun, faCloudRain, faTint, faEye, faWind } from "@fortawesome/free-solid-svg-icons";
-
-// Mock weather data - in real app would come from weather API
-const weatherData = {
-  location: "Springfield Valley Farm",
-  current: {
-    temperature: 22,
-    condition: "cloudy",
-    humidity: 65,
-    rainChance: 40,
-    windSpeed: 12,
-    visibility: 10,
-    uvIndex: 6
-  },
-  forecast: [
-    { day: "Today", high: 25, low: 18, condition: "cloudy", rainChance: 40 },
-    { day: "Tomorrow", high: 23, low: 16, condition: "rainy", rainChance: 85 },
-    { day: "Wednesday", high: 27, low: 20, condition: "sunny", rainChance: 10 },
-    { day: "Thursday", high: 26, low: 19, condition: "sunny", rainChance: 15 }
-  ]
-};
 
 const getWeatherIcon = (condition, size = "w-6 h-6") => {
   switch (condition) {
@@ -52,6 +33,67 @@ const getUVIndexColor = (index) => {
 };
 
 export default function WeatherWidget() {
+  const [weatherData, setWeatherData] = useState(null);
+
+  useEffect(() => {
+    const lat = 12.9629; // your latitude
+    const lon = 77.5775; // your longitude
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,weathercode,uv_index_max&timezone=auto`;
+
+    fetch(url)
+      .then((res) => res.json())
+      .then((data) => {
+        const current = {
+          temperature: data.current_weather.temperature,
+          condition: mapWeatherCode(data.current_weather.weathercode),
+          humidity: data.hourly?.relativehumidity_2m?.[0] || 60, // fallback if hourly not requested
+          rainChance: data.daily.precipitation_probability_max[0],
+          windSpeed: data.current_weather.windspeed,
+          visibility: 10, // Open-Meteo free API doesn’t provide visibility
+          uvIndex: data.daily.uv_index_max[0] || 5,
+        };
+
+        const forecast = data.daily.time.slice(0, 4).map((day, idx) => ({
+          day: idx === 0 ? "Today" : new Date(day).toLocaleDateString("en-US", { weekday: "long" }),
+          high: data.daily.temperature_2m_max[idx],
+          low: data.daily.temperature_2m_min[idx],
+          condition: mapWeatherCode(data.daily.weathercode[idx]),
+          rainChance: data.daily.precipitation_probability_max[idx],
+        }));
+
+        // Fetch village/town/city name
+        fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`)
+          .then((res) => res.json())
+          .then((geoData) => {
+            const addr = geoData.address || {};
+            const locationName =
+              addr.village || addr.town || addr.city || addr.county || `Lat ${lat}, Lon ${lon}`;
+
+            setWeatherData({
+              location: locationName,
+              current,
+              forecast,
+            });
+          })
+          .catch(() => {
+            setWeatherData({
+              location: `Lat ${lat}, Lon ${lon}`,
+              current,
+              forecast,
+            });
+          });
+      })
+      .catch((err) => console.error("Weather fetch error:", err));
+  }, []);
+
+  if (!weatherData) {
+    return (
+      <Card className="w-full max-w-md mx-auto lg:max-w-lg bg-white h-[620px] flex items-center justify-center">
+        <p className="text-gray-500">Loading weather...</p>
+      </Card>
+    );
+  }
+
   return (
     <Card className="w-full max-w-md mx-auto lg:max-w-lg bg-white h-[620px] flex flex-col">
       <CardHeader className="text-center pb-4 px-4 sm:px-6 flex-shrink-0">
@@ -167,4 +209,26 @@ export default function WeatherWidget() {
       </CardContent>
     </Card>
   );
+}
+
+// Map Open-Meteo weather codes to condition strings
+function mapWeatherCode(code) {
+  const mapping = {
+    0: "sunny",
+    1: "sunny",
+    2: "cloudy",
+    3: "overcast",
+    45: "cloudy",
+    48: "cloudy",
+    51: "rainy",
+    53: "rainy",
+    55: "rainy",
+    61: "rainy",
+    63: "rainy",
+    65: "rainy",
+    80: "rainy",
+    81: "rainy",
+    82: "rainy",
+  };
+  return mapping[code] || "cloudy";
 }
