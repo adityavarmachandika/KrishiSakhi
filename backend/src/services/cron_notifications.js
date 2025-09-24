@@ -1,6 +1,7 @@
 // cron-jobs.js
 import cron from "node-cron";
-import {create_message}  from "./twilo.js";
+
+import sendTemplateMessage from "./WHatsaap_message.js"; // ✅ use WhatsApp message function
 import { crop } from "../models/crop.js";
 import { farmer_details } from "../models/farmer.js";
 import { activity } from "../models/activity.js";
@@ -23,7 +24,8 @@ cron.schedule("* * * * *", async () => {
       for (const c of crops) {
         try {
           // 3️⃣ Fetch recent activities for this crop
-          const activities = await activity.find({ crop_id: c._id })
+          const activities = await activity
+            .find({ crop_id: c._id })
             .sort({ createdAt: -1 })
             .limit(10);
 
@@ -56,7 +58,7 @@ Suggest 1–2 practical farming tasks for the next 2 days in simple language for
 
           const tasks = await chatWithGemini(prompt);
 
-          // 8️⃣ Final personalized SMS
+          // 8️⃣ Final personalized WhatsApp message
           const message = `
 Hello ${f.name || "Farmer"},
 Crop: ${c.crop_name || "N/A"}
@@ -66,18 +68,13 @@ ${summary}
 
 📌 Tasks for next 2 days:
 ${tasks}
-          `;
+          `.trim();
 
-          // 9️⃣ Send SMS safely
-          const smsResult = await create_message(message.trim(), "9989469228");
-          if (!smsResult.success) {
-            if (smsResult.error?.code === 21608) {
-              console.warn(`⚠️ Skipping unverified number ${f.phone}`);
-            } else {
-              console.error(`❌ Failed to send SMS to ${f.phone}:y
-                `, smsResult.error.message);
-            }
-            // Continue to next crop/farmer even if SMS fails
+          // 9️⃣ Send WhatsApp message instead of create_message()
+          const waResult = await sendTemplateMessage(f.phone, message);
+
+          if (!waResult?.success) {
+            console.warn(`⚠️ Failed to send WhatsApp to ${f.phone}:`, waResult?.error || "Unknown error");
           }
 
         } catch (cropErr) {
