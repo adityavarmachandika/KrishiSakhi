@@ -59,14 +59,30 @@ const Navbar = () => {
           {/* Desktop Nav */}
           <nav className="desktop">
             <ul>
-              {navLinks.map(({ link, name }) => (
-                <li key={name} className="group">
-                  <a href={link}>
-                    <span>{name}</span>
+              <li className="group">
+                <Link to='/'>
+                    <span>About</span>
                     <span className="underline" />
-                  </a>
-                </li>
-              ))}
+                 </Link>
+                  </li>
+              <li className="group">
+                <Link to='#weather'>
+                    <span>Weather</span>
+                    <span className="underline" />
+                 </Link>
+                  </li>
+              <li className="group">
+                <Link to='/chat'>
+                    <span>Chat</span>
+                    <span className="underline" />
+                 </Link>
+                  </li>
+              <li className="group">
+                <Link to='/news'>
+                    <span>News</span>
+                    <span className="underline" />
+                 </Link>
+                  </li>
             </ul>
           </nav>
 

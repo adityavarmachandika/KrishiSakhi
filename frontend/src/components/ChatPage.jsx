@@ -3,6 +3,8 @@ import { Plus, Send, Mic, Download, Play, Pause, Calendar } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { UserContext } from '../context/UserContext';
 import API from '../context/api';
+const SARVAM_API_KEY = import.meta.env.VITE_SARVAM_API_KEY;
+const SARVAM_API_URL = "https://api.sarvam.ai/speech-to-text-translate";
 
 const ChatPage = () => {
   const { user, cropDetails } = useContext(UserContext);
@@ -12,6 +14,8 @@ const ChatPage = () => {
 
   const [newMessage, setNewMessage] = useState('');
   const [isRecording, setIsRecording] = useState(false);
+  const [mediaRecorder, setMediaRecorder] = useState(null);
+  const [audioChunks, setAudioChunks] = useState([]);
   const [playingAudio, setPlayingAudio] = useState(null);
   const [isLoadingOlder, setIsLoadingOlder] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -65,13 +69,17 @@ const ChatPage = () => {
 
   useEffect(() => {
     // Only auto-scroll to bottom for new messages sent by user or received responses
-    // Don't auto-scroll when loading older messages
+    // Don't auto-scroll when loading older messages or initial chat history
     if (!isLoadingOlder) {
       const lastMessage = displayedMessages[displayedMessages.length - 1];
-      const isRecentMessage = lastMessage && new Date() - new Date(lastMessage.timestamp) < 5000; // Within 5 seconds
+
+      const isNewMessage = lastMessage && (
+        (lastMessage.sender === 'user' && !lastMessage.id.toString().includes('-question')) ||
+        (lastMessage.sender === 'ai' && !lastMessage.id.toString().includes('-answer') && lastMessage.type !== 'typing')
+      );
       
-      if (isRecentMessage) {
-        scrollToBottom();
+      if (isNewMessage) {
+        setTimeout(() => scrollToBottom(), 100); // Small delay to ensure render
       }
     }
   }, [displayedMessages, isLoadingOlder]);
@@ -89,6 +97,66 @@ const ChatPage = () => {
       return () => document.removeEventListener('mousedown', handleClickOutside);
     }
   }, [showDatePicker]);
+
+  // Fetch previous chats when component mounts
+  useEffect(() => {
+    const fetchPreviousChats = async () => {
+      if (!user?.id) return;
+
+      try {
+        setIsLoadingOlder(true);
+        console.log('Fetching previous chats for user:', user.id);
+        
+        const response = await API.get(`/chat/fetch_all_queries/${user.id}`);
+        console.log('Previous chats response:', response.data);
+
+        if (response.data.success && response.data.data) {
+          const previousChats = [];
+          
+          response.data.data.forEach(chat => {
+            // Add user question
+            previousChats.push({
+              id: `${chat._id}-question`,
+              type: 'text',
+              content: chat.question,
+              sender: 'user',
+              timestamp: new Date(chat.date),
+            });
+            
+            // Add AI response immediately after the question
+            previousChats.push({
+              id: `${chat._id}-answer`,
+              type: 'text',
+              content: chat.answer || 'No response available',
+              sender: 'ai',
+              timestamp: new Date(chat.date),
+            });
+          });
+
+          setDisplayedMessages(previousChats);
+          console.log('Loaded previous chats:', previousChats.length, 'messages');
+        }
+      } catch (error) {
+        console.error('Error fetching previous chats:', error);
+      } finally {
+        setIsLoadingOlder(false);
+      }
+    };
+
+    fetchPreviousChats();
+  }, [user?.id]); // Only run when user.id changes
+
+  // Cleanup effect for microphone resources
+  useEffect(() => {
+    return () => {
+      // Cleanup on component unmount
+      if (mediaRecorder && mediaRecorder.state === 'recording') {
+        mediaRecorder.stop();
+      }
+      // Clear any audio chunks
+      setAudioChunks([]);
+    };
+  }, [mediaRecorder]);
 
   const formatDate = (date) => {
     const today = new Date();
@@ -344,34 +412,137 @@ const ChatPage = () => {
     return responses[transcription] || "Thank you for your voice message! I understand what you're saying and I'm here to help.";
   };
 
-  const toggleRecording = () => {
-    setIsRecording(!isRecording);
+  const toggleRecording = async () => {
     if (!isRecording) {
-      setTimeout(() => {
+      // Start recording
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+          audio: {
+            sampleRate: 48000,
+            channelCount: 1,
+            echoCancellation: true,
+            noiseSuppression: true
+          } 
+        });
+        
+        // Use webm format but we'll send as mp4
+        const recorder = new MediaRecorder(stream, {
+          mimeType: 'audio/webm;codecs=opus'
+        });
+        
+        const chunks = [];
+        
+        recorder.ondataavailable = (event) => {
+          if (event.data.size > 0) {
+            chunks.push(event.data);
+          }
+        };
+        
+        recorder.onstop = async () => {
+          const audioBlob = new Blob(chunks, { type: 'audio/webm' });
+          await processAudioForSpeechToText(audioBlob);
+          
+          // Stop all tracks to release microphone
+          stream.getTracks().forEach(track => track.stop());
+        };
+        
+        recorder.start();
+        setMediaRecorder(recorder);
+        setAudioChunks(chunks);
+        setIsRecording(true);
+        
+        toast.success('Recording started...');
+        
+      } catch (error) {
+        console.error('Error accessing microphone:', error);
+        toast.error('Could not access microphone. Please check permissions.');
+      }
+    } else {
+      // Stop recording
+      if (mediaRecorder && mediaRecorder.state === 'recording') {
+        mediaRecorder.stop();
         setIsRecording(false);
-        const mockTranscription = generateMockTranscription();
+        toast.info('Processing audio...');
+      }
+    }
+  };
+
+  const processAudioForSpeechToText = async (audioBlob) => {
+    try {
+      // Debug logging for API key
+      console.log('SARVAM_API_KEY loaded:', SARVAM_API_KEY ? 'YES' : 'NO');
+      console.log('API Key length:', SARVAM_API_KEY ? SARVAM_API_KEY.length : 0);
+      
+      // Check if API key is configured
+      if (!SARVAM_API_KEY || SARVAM_API_KEY === "YOUR_SARVAM_API_KEY_HERE") {
+        toast.error('Sarvam AI API key not configured. Please add your API key to enable speech-to-text.');
+        console.error('Please configure VITE_SARVAM_API_KEY in your .env file');
+        return;
+      }
+
+      // Create FormData for the API request
+      const formData = new FormData();
+      
+      // Convert webm to a file-like object that can be sent as mp4
+      // Note: The API expects mp4, but we're sending webm with mp4 filename
+      const audioFile = new File([audioBlob], 'recording.mp4', { 
+        type: 'audio/mp4' 
+      });
+      
+      formData.append("file", audioFile);
+      
+      // Speech To Text Translate API call
+      const response = await fetch(SARVAM_API_URL, {
+        method: "POST",
+        headers: {
+          "api-subscription-key": SARVAM_API_KEY
+        },
+        body: formData,
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`API request failed: ${response.status} ${response.statusText}. ${errorText}`);
+      }
+      
+      const result = await response.json();
+      console.log('Speech-to-text result:', result);
+      
+      // Extract transcribed text from the API response
+      // The API response structure may vary, so we try multiple possible fields
+      const transcribedText = result.transcript || result.text || result.translated_text || '';
+      
+      if (transcribedText) {
+        // Add voice message to chat
         const voiceMessage = {
           id: Date.now(),
           type: 'voice',
-          content: 'voice-recording.mp3',
-          transcription: mockTranscription,
+          content: URL.createObjectURL(audioBlob),
+          transcription: transcribedText,
           sender: 'user',
           timestamp: new Date(),
         };
+        
         setDisplayedMessages(prev => [...prev, voiceMessage]);
         
-        // Generate LLM response to voice message
-        setTimeout(() => {
-          const llmResponse = {
-            id: Date.now() + 1,
-            type: 'text',
-            content: generateLLMResponseToVoice(mockTranscription),
-            sender: 'ai',
-            timestamp: new Date(),
-          };
-          setDisplayedMessages(prev => [...prev, llmResponse]);
-        }, 1500);
-      }, 2000);
+        // Set the transcribed text in the input field for user to review/edit
+        setNewMessage(transcribedText);
+        
+        toast.success('Voice transcribed! You can edit the text before sending.');
+      } else {
+        console.warn('No transcript found in API response:', result);
+        toast.error('Could not transcribe audio. Please try speaking clearly.');
+      }
+      
+    } catch (error) {
+      console.error('Error processing audio:', error);
+      if (error.message.includes('401') || error.message.includes('403')) {
+        toast.error('Authentication failed. Please check your Sarvam AI API key.');
+      } else if (error.message.includes('429')) {
+        toast.error('API rate limit exceeded. Please try again later.');
+      } else {
+        toast.error('Error processing voice message. Please try again.');
+      }
     }
   };
 
@@ -618,11 +789,21 @@ const ChatPage = () => {
             className="flex-1 overflow-y-auto px-6 py-4 space-y-4"
           >
             {/* Loading Spinner */}
-            {isLoadingOlder && (
-              <div className="flex justify-center py-6">
-                <div className="flex items-center justify-center">
-                  <div className="w-8 h-8 border-3 border-gray-300 border-t-[#365949] rounded-full animate-spin"></div>
+            {isLoadingOlder && displayedMessages.length === 0 && (
+              <div className="flex flex-col items-center justify-center py-12">
+                <div className="w-8 h-8 border-3 border-gray-300 border-t-[#365949] rounded-full animate-spin mb-3"></div>
+                <p className="text-gray-500 text-sm">Loading your chat history...</p>
+              </div>
+            )}
+
+            {/* Empty state when no messages */}
+            {!isLoadingOlder && displayedMessages.length === 0 && (
+              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <div className="w-16 h-16 bg-[#365949] rounded-full flex items-center justify-center mb-4">
+                  <Send className="w-8 h-8 text-white" />
                 </div>
+                <h3 className="text-lg font-semibold text-gray-700 mb-2">Start a conversation</h3>
+                <p className="text-gray-500 text-sm">Ask me anything about farming, crops, or agricultural practices!</p>
               </div>
             )}
 

@@ -16,6 +16,7 @@ export default function CropDetailsForm() {
     soil_type: '',
     feild_size: '',
     irrigation_type: '',
+    present_crop: '',
     previous_crop: '',
     location: {
       latitude: null,
@@ -88,6 +89,7 @@ export default function CropDetailsForm() {
         soil_type: formData.soil_type,
         feild_size: parseFloat(formData.feild_size),
         irrigation_type: formData.irrigation_type,
+        present_crops: formData.present_crop,
         previous_crops: formData.previous_crop,
         location: {
           latitude: formData.location.latitude,
@@ -170,12 +172,25 @@ export default function CropDetailsForm() {
             <div className="flex flex-col gap-2">
               <label className="text-[#365949] font-semibold flex items-center gap-2">
                 <FontAwesomeIcon icon={faLeaf} />
+                Present Crop
+              </label>
+              <input
+                type="text"
+                value={formData.present_crop}
+                onChange={(e) => handleInputChange('present_crop', e.target.value)}
+                placeholder="Enter soil type (e.g., Clay, Sandy, Loamy)"
+                className="px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-[#365949] focus:ring-2 focus:ring-[#365949]/20"
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <label className="text-[#365949] font-semibold flex items-center gap-2">
+                <FontAwesomeIcon icon={faLeaf} />
                 Previous Crop
               </label>
               <input
                 type="text"
                 value={formData.previous_crop}
-                onChange={(e) => handleInputChange('soil_type', e.target.value)}
+                onChange={(e) => handleInputChange('previous_crop', e.target.value)}
                 placeholder="Enter soil type (e.g., Clay, Sandy, Loamy)"
                 className="px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-[#365949] focus:ring-2 focus:ring-[#365949]/20"
               />
