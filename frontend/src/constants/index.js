@@ -1,3 +1,4 @@
+import { faComments, faChartLine, faCloud, faTasks } from '@fortawesome/free-solid-svg-icons';
 const navLinks = [
   {
     name: "About",
