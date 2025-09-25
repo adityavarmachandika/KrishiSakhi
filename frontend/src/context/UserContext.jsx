@@ -51,6 +51,7 @@ export const UserProvider = ({ children }) => {
       return response.data;
     } catch (error) {
       console.error("Error fetching crop details:", error);
+      setCropDetails(null);
       return null;
     }
   };

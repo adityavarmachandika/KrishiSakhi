@@ -120,5 +120,39 @@ const LatestNews = [
 }
 ];
 
+  const features = [
+    {
+      id: 1,
+      icon: faComments,
+      title: "AI Chat Assistant",
+      description: "Get instant farming advice and solutions powered by AI",
+      color: "from-green-400 to-green-600",
+      delay: "0s"
+    },
+    {
+      id: 2,
+      icon: faChartLine,
+      title: "Activity Logging",
+      description: "Track and analyze your farming activities efficiently",
+      color: "from-blue-400 to-blue-600", 
+      delay: "0.2s"
+    },
+    {
+      id: 3,
+      icon: faCloud,
+      title: "Weather Insights",
+      description: "Real-time weather updates for better crop planning",
+      color: "from-purple-400 to-purple-600",
+      delay: "0.4s"
+    },
+    {
+      id: 4,
+      icon: faTasks,
+      title: "Task Management",
+      description: "Organize and prioritize your farm tasks effectively",
+      color: "from-orange-400 to-orange-600",
+      delay: "0.6s"
+    }
+  ];
 
-export { navLinks, farmerTasksData, LatestNews };
+export { navLinks, farmerTasksData, LatestNews, features };

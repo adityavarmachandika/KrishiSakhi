@@ -34,29 +34,62 @@ const getUVIndexColor = (index) => {
 };
 
 export default function WeatherWidget() {
-  const { cropDetails } = useContext(UserContext);
+  const { cropDetails, user, isLoggedIn, fetchCropDetails } = useContext(UserContext);
   const [weatherData, setWeatherData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchWeatherData = async () => {
+      // Check if we need to wait for authentication to complete
+      const hasToken = localStorage.getItem("token");
+      
+      // If there's a token but user isn't logged in yet, wait
+      if (hasToken && !isLoggedIn) {
+        console.log('Token exists but user not authenticated yet, waiting...');
+        return;
+      }
+      
+      // If user is logged in but cropDetails hasn't loaded yet, wait
+      if (isLoggedIn && !cropDetails) {
+        console.log('User logged in but cropDetails not loaded yet, waiting...');
+        return;
+      }
+      
       setIsLoading(true);
       
       // Get coordinates from cropDetails or use default values
       let lat, lon;
       
-      if (cropDetails && cropDetails.location && 
-          cropDetails.location.latitude && 
-          cropDetails.location.longitude) {
+      // Check if cropDetails is an array and has items
+      if (cropDetails && Array.isArray(cropDetails) && cropDetails.length > 0) {
+        const firstCrop = cropDetails[0];
+        if (firstCrop && firstCrop.location && 
+            firstCrop.location.latitude && 
+            firstCrop.location.longitude) {
+          lat = firstCrop.location.latitude;
+          lon = firstCrop.location.longitude;
+          console.log('✅ Using coordinates from cropDetails:', { lat, lon });
+        }
+      } else if (cropDetails && cropDetails.location && 
+                 cropDetails.location.latitude && 
+                 cropDetails.location.longitude) {
+        // Handle case where cropDetails is a single object
         lat = cropDetails.location.latitude;
         lon = cropDetails.location.longitude;
-        console.log('Using coordinates from cropDetails:', { lat, lon });
-      } else {
-        // Fallback to Bangalore coordinates
+        console.log('✅ Using coordinates from single cropDetails object:', { lat, lon });
+      }
+      
+      // Fallback to default coordinates (only if not logged in OR cropDetails is empty)
+      if (!lat || !lon) {
         lat = 12.9629;
         lon = 77.5775;
-        console.log('Using default coordinates (Bangalore):', { lat, lon });
+        console.log('⚠️  Using default coordinates (Bangalore):', { lat, lon });
+        console.log('Reason: isLoggedIn =', isLoggedIn, 'cropDetails =', !!cropDetails);
       }
+
+      console.log('🌍 Final coordinates being used for weather API:', { lat, lon });
+      console.log('📍 CropDetails state:', cropDetails);
+      console.log('🔐 IsLoggedIn:', isLoggedIn);
 
     const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,weathercode,uv_index_max&timezone=auto`;
 
@@ -85,9 +118,14 @@ export default function WeatherWidget() {
         fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`)
           .then((res) => res.json())
           .then((geoData) => {
+            console.log('Reverse geocoding data:', geoData);
+            console.log('Address:', geoData.address);
             const addr = geoData.address || {};
             const locationName =
-              addr.village || addr.town || addr.city || addr.county || `Lat ${lat}, Lon ${lon}`;
+              addr.village || addr.town || addr.city || addr.county || addr.state || `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
+            
+            console.log('Final location name:', locationName);
+            console.log('Used coordinates:', { lat, lon });
 
             setWeatherData({
               location: locationName,
@@ -95,9 +133,10 @@ export default function WeatherWidget() {
               forecast,
             });
           })
-          .catch(() => {
+          .catch((err) => {
+            console.log('Geocoding failed, using coordinates');
             setWeatherData({
-              location: `Lat ${lat}, Lon ${lon}`,
+              location: `${lat.toFixed(4)}, ${lon.toFixed(4)}`,
               current,
               forecast,
             });
@@ -113,14 +152,26 @@ export default function WeatherWidget() {
     };
 
     fetchWeatherData();
-  }, [cropDetails]); // Re-fetch when cropDetails changes
+  }, [cropDetails, isLoggedIn]);
+
+  // Check if we're waiting for authentication or crop details
+  const hasToken = localStorage.getItem("token");
+  const isWaitingForAuth = hasToken && !isLoggedIn;
+  const isWaitingForCropDetails = isLoggedIn && !cropDetails;
 
   if (isLoading || !weatherData) {
+    let loadingMessage = 'Loading weather...';
+    if (isWaitingForAuth) {
+      loadingMessage = 'Authenticating...';
+    } else if (isWaitingForCropDetails) {
+      loadingMessage = 'Loading farm location...';
+    } else if (!weatherData) {
+      loadingMessage = 'Loading...';
+    }
+
     return (
       <Card className="w-full max-w-md mx-auto lg:max-w-lg bg-white h-[620px] flex items-center justify-center">
-        <p className="text-gray-500">
-          {isLoading ? 'Loading weather...' : 'Weather data unavailable'}
-        </p>
+        <p className="text-gray-500">{loadingMessage}</p>
       </Card>
     );
   }

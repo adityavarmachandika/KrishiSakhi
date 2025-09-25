@@ -20,6 +20,7 @@ export default function CropDetailsForm() {
     previous_crop: '',
     location: {
       latitude: null,
+      
       longitude: null
     }
   });
