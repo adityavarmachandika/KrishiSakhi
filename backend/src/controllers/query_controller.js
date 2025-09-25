@@ -7,7 +7,7 @@ import { all_queries_service } from "../services/all_queries.js";
 
 export const query_controller = async (req, res) => {
   try {
-    const { farmer_id, crop_id, query } = req.body;
+    const { farmer_id, query, crop_id } = req.body;
 
     if (!farmer_id || !query) {
       return res.status(400).json({ error: "farmer_id and query are required" });
@@ -37,7 +37,7 @@ export const query_controller = async (req, res) => {
     
 
 const systemPrompt = `
-You are an expert agricultural assistant. Answer the user's query using the following context:
+Yo u are an expert agricultural assistant. Answer the user's query using the following context:
 
 User Query: ${query}
 
