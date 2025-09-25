@@ -2,6 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import { Link } from 'react-router-dom';
 import { UserContext } from '../context/UserContext';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import {features} from '../constants';
 import { 
   faComments, 
   faChartLine, 
@@ -15,13 +16,16 @@ import {
   faNewspaper,
   faCalendarAlt,
   faUser,
-  faExternalLinkAlt
+  faExternalLinkAlt,
+  faMicrophone,
+  faRightToBracket
 } from '@fortawesome/free-solid-svg-icons';
 import MainPage_Image from "../assets/MainPage_Image.jpg";
 import WeatherWidget from './WeatherWidget';
 import Task from './Task';
 import Updates from './Updates';
 import { LatestNews } from '../constants';
+import Footer from './ui/Footer';
 
 const Home = () => {
   const { user, isLoggedIn } = useContext(UserContext);
@@ -32,45 +36,9 @@ const Home = () => {
     setIsVisible(true);
   }, []);
 
-  const features = [
-    {
-      id: 1,
-      icon: faComments,
-      title: "AI Chat Assistant",
-      description: "Get instant farming advice and solutions powered by AI",
-      color: "from-green-400 to-green-600",
-      delay: "0s"
-    },
-    {
-      id: 2,
-      icon: faChartLine,
-      title: "Activity Logging",
-      description: "Track and analyze your farming activities efficiently",
-      color: "from-blue-400 to-blue-600", 
-      delay: "0.2s"
-    },
-    {
-      id: 3,
-      icon: faCloud,
-      title: "Weather Insights",
-      description: "Real-time weather updates for better crop planning",
-      color: "from-purple-400 to-purple-600",
-      delay: "0.4s"
-    },
-    {
-      id: 4,
-      icon: faTasks,
-      title: "Task Management",
-      description: "Organize and prioritize your farm tasks effectively",
-      color: "from-orange-400 to-orange-600",
-      delay: "0.6s"
-    }
-  ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-green-50 to-blue-50 pt-24">
-      {/* Hero Section */}
-    
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-green-50 to-blue-50 pt-24">    
             {/* Hero Section */}
       <section className="container mx-auto px-6 py-20" id="hero">
         <div className="grid lg:grid-cols-2 gap-16 items-center">
@@ -109,8 +77,6 @@ const Home = () => {
                 </button>
               </Link>
             </div>
-
-            {/* Stats */}
           </div>
 
           {/* Right Image */}
@@ -142,6 +108,7 @@ const Home = () => {
 
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
           {features.map((feature) => (
+            <Link to={feature.id === 1 ? (isLoggedIn ? "/chat" : "/login") : feature.id === 2 ? (isLoggedIn ? "/activity-logging" : "/login") : feature.id === 3 ? "#weather" : feature.id === 4 ? "#tasks" : "#"} key={feature.id} className="no-underline">
             <div
               key={feature.id}
               className={`group bg-white rounded-2xl p-8 shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-500 cursor-pointer border border-gray-100 hover:border-green-200 animate-fade-in-up`}
@@ -171,6 +138,7 @@ const Home = () => {
                 </span>
               </div>
             </div>
+            </Link>
           ))}
         </div>
       </section>
@@ -211,14 +179,24 @@ const Home = () => {
         </div>
         <div className="max-w-2xl mx-auto bg-white rounded-xl shadow-sm border border-gray-100 p-8">
           <div className="text-center">
-            <div className="bg-green-100 rounded-full p-4 w-16 h-16 mx-auto mb-4">
-              <FontAwesomeIcon icon={faComments} className="text-green-600 text-2xl" />
+            <div className='flex items-center justify-center gap-6 mb-8 mx-auto max-w-md'>
+              <div className="bg-green-100 rounded-full p-4 w-16 h-16 flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-110">
+                <FontAwesomeIcon icon={faMicrophone} className="text-green-600 text-2xl" />
+              </div>
+              <div className="flex items-center justify-center">
+                <FontAwesomeIcon icon={faArrowRight} className="text-green-600 text-3xl animate-pulse" />
+              </div>
+              <div className="bg-green-100 rounded-full p-4 w-16 h-16 flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-110">
+                <FontAwesomeIcon icon={faComments} className="text-green-600 text-2xl" />
+              </div>
             </div>
-            <h3 className="text-xl font-semibold text-gray-800 mb-2">Chat Feature Coming Soon</h3>
+            <h3 className="text-xl font-semibold text-gray-800 mb-2">Voice-to-Chat Feature</h3>
             <p className="text-gray-600 mb-6">Our AI-powered chat assistant will help you with farming questions, crop recommendations, and more.</p>
+            <Link to={isLoggedIn ? "/chat" : "/login"}>
             <button className="bg-green-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-700 transition-colors duration-300">
-              Join Waitlist
+              Chat
             </button>
+            </Link>
           </div>
         </div>
       </section>
@@ -241,8 +219,8 @@ const Home = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 mb-12">
-            {!isLoggedIn && LatestNews[0]?.articles?.length > 0 ? (
-              LatestNews[0].articles.map((article, index) => (
+            {LatestNews.length > 0 ? (
+              LatestNews.flatMap(newsObj => newsObj.articles || []).map((article, index) => (
                 <div 
                   key={index} 
                   className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300 group cursor-pointer transform hover:-translate-y-1"
@@ -257,7 +235,7 @@ const Home = () => {
                         </div>
                         <div>
                           <span className="text-sm font-semibold text-gray-800 block">
-                            {article.source.name}
+                            {article.source?.name || 'Unknown Source'}
                           </span>
                           <div className="flex items-center gap-1 text-xs text-gray-500">
                             <FontAwesomeIcon icon={faCalendarAlt} className="text-xs" />
@@ -298,19 +276,15 @@ const Home = () => {
                   </div>
                 </div>
               ))
-            ) : isLoggedIn ? (
-              <div className="col-span-full text-center py-16">
-                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 max-w-md mx-auto">
-                  <div className="bg-blue-100 rounded-full p-4 w-16 h-16 mx-auto mb-4">
-                    <FontAwesomeIcon icon={faGlobe} className="text-blue-600 text-2xl" />
-                  </div>
-                  <h3 className="text-xl font-semibold text-gray-800 mb-2">Personalized News Coming Soon</h3>
-                  <p className="text-gray-600">Get personalized agricultural news based on your farming practices.</p>
-                </div>
-              </div>
             ) : (
               <div className="col-span-full text-center py-16">
-                <p className="text-gray-500">No news articles available.</p>
+                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 max-w-md mx-auto">
+                  <div className="bg-gray-100 rounded-full p-4 w-16 h-16 mx-auto mb-4">
+                    <FontAwesomeIcon icon={faNewspaper} className="text-gray-600 text-2xl" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-gray-800 mb-2">No News Available</h3>
+                  <p className="text-gray-600">Check back later for the latest agricultural news and updates.</p>
+                </div>
               </div>
             )}
           </div>
@@ -323,20 +297,7 @@ const Home = () => {
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="bg-gradient-to-r from-green-600 via-green-700 to-blue-600 py-20">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-4xl font-bold text-white mb-6">
-            Ready to Transform Your Farming?
-          </h2>
-          <p className="text-xl text-green-100 mb-8 max-w-2xl mx-auto">
-            Join thousands of farmers who are already using Krishi Sakhi to optimize their agricultural practices
-          </p>
-          <button className="bg-white text-green-700 px-10 py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 hover:bg-gray-50">
-            Get Started Today
-          </button>
-        </div>
-      </section>
+      <Footer/>      
     </div>
   );
 };

@@ -1,16 +1,34 @@
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCloud, faTasks, faMapMarkerAlt, faThermometerHalf, faSun, faCloudRain } from "@fortawesome/free-solid-svg-icons";
+import { UserContext } from "../context/UserContext";
 
 const Updates = () => {
+  const { cropDetails } = useContext(UserContext);
   const [weather, setWeather] = useState(null);
   const [locationName, setLocationName] = useState("Loading...");
-
-  const latitude = 12.9716; // Example latitude
-  const longitude = 77.5946; // Example longitude
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchWeather = async () => {
+      setIsLoading(true);
+      
+      // Get coordinates from cropDetails or use default values
+      let latitude, longitude;
+      
+      if (cropDetails && cropDetails.location && 
+          cropDetails.location.latitude && 
+          cropDetails.location.longitude) {
+        latitude = cropDetails.location.latitude;
+        longitude = cropDetails.location.longitude;
+        console.log('Updates: Using coordinates from cropDetails:', { latitude, longitude });
+      } else {
+        // Fallback to Bangalore coordinates
+        latitude = 12.9716;
+        longitude = 77.5946;
+        console.log('Updates: Using default coordinates (Bangalore):', { latitude, longitude });
+      }
+
       try {
         // Fetch weather data
         const weatherRes = await fetch(
@@ -44,11 +62,14 @@ const Updates = () => {
       } catch (error) {
         console.error("Error fetching weather/location:", error);
         setLocationName("Unavailable");
+        setWeather(null);
+      } finally {
+        setIsLoading(false);
       }
     };
 
     fetchWeather();
-  }, [latitude, longitude]);
+  }, [cropDetails]); // Re-fetch when cropDetails changes
 
   return (
     <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-300 max-w-4xl mx-auto">
@@ -72,18 +93,18 @@ const Updates = () => {
               <div className="flex items-center justify-between">
                 <div className="min-w-0">
                   <p className="text-sm font-medium text-gray-700 truncate">
-                    {weather ? weather.condition : "Loading..."}
+                    {isLoading ? "Loading..." : weather ? weather.condition : "Unavailable"}
                   </p>
                 </div>
                 <div className="text-right flex-shrink-0">
                   <div className="flex items-center gap-1">
                     <FontAwesomeIcon icon={faThermometerHalf} className="text-blue-500 text-xs" />
                     <span className="text-lg font-bold text-gray-800">
-                      {weather ? `${weather.temperature}°C` : "--"}
+                      {isLoading ? "--" : weather ? `${weather.temperature}°C` : "--"}
                     </span>
                   </div>
                   <p className="text-xs text-gray-500">
-                    {weather ? `Feels ${Math.round(weather.temperature + 2)}°C` : "--"}
+                    {isLoading ? "--" : weather ? `Feels ${Math.round(weather.temperature + 2)}°C` : "--"}
                   </p>
                 </div>
               </div>

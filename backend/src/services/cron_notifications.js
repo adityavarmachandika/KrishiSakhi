@@ -41,7 +41,7 @@ cron.schedule("* * * * *", async () => {
 
           // 6️⃣ Prepare crop condition text
           const cropCondition = `
-Crop: ${c.crop_name || "N/A"}
+Crop: ${c.present_crop || "N/A"}
 Soil: ${c.soil_type || "N/A"}
 Irrigation: ${c.irrigation_type || "N/A"}
           `;
@@ -61,7 +61,7 @@ Suggest 1–2 practical farming tasks for the next 2 days in simple language for
           // 8️⃣ Final personalized WhatsApp message
           const message = `
 Hello ${f.name || "Farmer"},
-Crop: ${c.crop_name || "N/A"}
+Crop: ${c.present_crop || "N/A"}
 
 Summary of recent activities:
 ${summary}
