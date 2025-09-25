@@ -57,7 +57,7 @@ Suggest 1–2 practical farming tasks for the next 2 days in simple language for
           `;
 
           const tasks = await chatWithGemini(prompt);
-
+          
           // 8️⃣ Final personalized WhatsApp message
           const message = `
 Hello ${f.name || "Farmer"},
