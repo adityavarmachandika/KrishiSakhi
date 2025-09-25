@@ -6,6 +6,26 @@ import API from '../context/api';
 const SARVAM_API_KEY = import.meta.env.VITE_SARVAM_API_KEY;
 const SARVAM_API_URL = "https://api.sarvam.ai/speech-to-text-translate";
 
+// Translation function using MyMemory API (free translation service)
+const translateToMalayalam = async (text) => {
+  try {
+    const response = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=en|ml`);
+    const data = await response.json();
+    
+    if (data.responseData && data.responseData.translatedText) {
+      return data.responseData.translatedText;
+    }
+    
+    // Fallback: return original text if translation fails
+    console.warn('Translation failed, using original text');
+    return text;
+  } catch (error) {
+    console.error('Translation error:', error);
+    toast.warning('Translation service unavailable, proceeding with English text');
+    return text;
+  }
+};
+
 const ChatPage = () => {
   const { user, cropDetails } = useContext(UserContext);
   
@@ -233,19 +253,32 @@ const ChatPage = () => {
       console.log('User object:', JSON.stringify(user, null, 2)); // Debug log
       console.log('User ID:', user.id); // Debug log
 
+      const currentMessage = newMessage;
+      setNewMessage('');
+      setIsSending(true);
+      setIsTyping(true);
+
+      // Translate message to Malayalam
+      let translatedMessage = '';
+      try {
+        translatedMessage = await translateToMalayalam(currentMessage);
+        console.log('Original message:', currentMessage);
+        console.log('Translated to Malayalam:', translatedMessage);
+      } catch (error) {
+        console.error('Translation failed:', error);
+        translatedMessage = currentMessage; // Fallback to original
+      }
+
       const userMessage = {
         id: Date.now(),
         type: 'text',
-        content: newMessage,
+        content: currentMessage,
+        translatedContent: translatedMessage,
         sender: 'user',
         timestamp: new Date(),
       };
       
       setDisplayedMessages(prev => [...prev, userMessage]);
-      const currentMessage = newMessage;
-      setNewMessage('');
-      setIsSending(true);
-      setIsTyping(true);
 
       // Add typing indicator message
       const typingMessage = {
@@ -292,7 +325,8 @@ const ChatPage = () => {
         // Create request payload - only include crop_id if it's valid
         const requestPayload = {
           farmer_id: farmerId,
-          query: currentMessage
+          query: currentMessage,
+          translated_message: translatedMessage // Add Malayalam translation
         };
         
         if (cropId) {
@@ -310,11 +344,23 @@ const ChatPage = () => {
         // Remove typing indicator
         setDisplayedMessages(prev => prev.filter(msg => msg.id !== 'typing-indicator'));
         
+        // Translate AI response to Malayalam for better user experience
+        let translatedAiResponse = '';
+        try {
+          translatedAiResponse = await translateToMalayalam(response.data.results.answer);
+          console.log('Original AI response:', response.data.results.answer);
+          console.log('Translated AI response to Malayalam:', translatedAiResponse);
+        } catch (error) {
+          console.error('AI response translation failed:', error);
+          translatedAiResponse = response.data.results.answer; // Fallback to original
+        }
+        
         // Add AI response to messages - updated to match new API response structure
         const aiResponse = {
           id: response.data.results._id,
           type: 'text',
           content: response.data.results.answer,
+          translatedContent: translatedAiResponse,
           sender: 'ai',
           timestamp: new Date(response.data.results.date),
         };
@@ -379,42 +425,9 @@ const ChatPage = () => {
     }
   };
 
-  const generateMockTranscription = () => {
-    const mockTranscriptions = [
-      "Hello, how are you doing today?",
-      "Can you help me with this project?",
-      "What's the weather like tomorrow?",
-      "I need some advice on this matter.",
-      "Could you explain this concept to me?",
-      "Thanks for your help with everything.",
-      "I'm really excited about this opportunity.",
-      "Let me know what you think about this.",
-      "I have a question about the requirements.",
-      "This looks great, let's proceed with it."
-    ];
-    return mockTranscriptions[Math.floor(Math.random() * mockTranscriptions.length)];
-  };
-
-  const generateLLMResponseToVoice = (transcription) => {
-    const responses = {
-      "Hello, how are you doing today?": "I'm doing well, thank you for asking! How can I help you today?",
-      "Can you help me with this project?": "Of course! I'd be happy to help you with your project. What specific assistance do you need?",
-      "What's the weather like tomorrow?": "I don't have access to real-time weather data, but you can check your local weather app for tomorrow's forecast!",
-      "I need some advice on this matter.": "I'm here to help with advice! Please share more details about what you'd like guidance on.",
-      "Could you explain this concept to me?": "Absolutely! I'd be glad to explain any concept. Which topic would you like me to clarify?",
-      "Thanks for your help with everything.": "You're very welcome! I'm always happy to help. Let me know if you need anything else.",
-      "I'm really excited about this opportunity.": "That's wonderful to hear! Excitement often leads to great outcomes. Tell me more about this opportunity.",
-      "Let me know what you think about this.": "I'd be happy to share my thoughts! Could you provide more context about what you'd like my opinion on?",
-      "I have a question about the requirements.": "Great! I'm here to help clarify any requirements. What specific question do you have?",
-      "This looks great, let's proceed with it.": "Excellent! I'm glad you're satisfied with it. Let's move forward - what's the next step?"
-    };
-    
-    return responses[transcription] || "Thank you for your voice message! I understand what you're saying and I'm here to help.";
-  };
 
   const toggleRecording = async () => {
     if (!isRecording) {
-      // Start recording
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ 
           audio: {
@@ -513,12 +526,24 @@ const ChatPage = () => {
       const transcribedText = result.transcript || result.text || result.translated_text || '';
       
       if (transcribedText) {
+        // Translate transcribed text to Malayalam
+        let translatedTranscription = '';
+        try {
+          translatedTranscription = await translateToMalayalam(transcribedText);
+          console.log('Original transcription:', transcribedText);
+          console.log('Translated transcription to Malayalam:', translatedTranscription);
+        } catch (error) {
+          console.error('Transcription translation failed:', error);
+          translatedTranscription = transcribedText; // Fallback to original
+        }
+
         // Add voice message to chat
         const voiceMessage = {
           id: Date.now(),
           type: 'voice',
           content: URL.createObjectURL(audioBlob),
           transcription: transcribedText,
+          translatedTranscription: translatedTranscription,
           sender: 'user',
           timestamp: new Date(),
         };
@@ -528,7 +553,7 @@ const ChatPage = () => {
         // Set the transcribed text in the input field for user to review/edit
         setNewMessage(transcribedText);
         
-        toast.success('Voice transcribed! You can edit the text before sending.');
+        toast.success('Voice transcribed and translated! You can edit the text before sending.');
       } else {
         console.warn('No transcript found in API response:', result);
         toast.error('Could not transcribe audio. Please try speaking clearly.');
@@ -607,7 +632,33 @@ const ChatPage = () => {
 
           {message.type === 'text' && (
             <div>
-              <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
+              {/* Show Malayalam first, then English */}
+              {message.translatedContent && message.translatedContent !== message.content && (
+                <div className="mb-2">
+                  <p className={`text-xs font-medium mb-1 ${
+                    isUser ? 'text-green-200' : 'text-gray-600'
+                  }`}>
+                    മലയാളം (Malayalam):
+                  </p>
+                  <p className="text-sm leading-relaxed whitespace-pre-wrap font-medium">
+                    {message.translatedContent}
+                  </p>
+                </div>
+              )}
+              
+              <div className={message.translatedContent && message.translatedContent !== message.content ? "mt-2 pt-2 border-t" : ""} style={{
+                borderColor: isUser ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)'
+              }}>
+                {message.translatedContent && message.translatedContent !== message.content && (
+                  <p className={`text-xs font-medium mb-1 ${
+                    isUser ? 'text-green-200' : 'text-gray-600'
+                  }`}>
+                    English:
+                  </p>
+                )}
+                <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
+              </div>
+              
               <p className={`text-xs mt-2 ${isUser ? 'text-green-100' : 'text-gray-500'}`}>
                 {formatTime(message.timestamp)}
               </p>
@@ -679,16 +730,37 @@ const ChatPage = () => {
                 <div className="border-t pt-2" style={{
                   borderColor: isUser ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)'
                 }}>
-                  <p className={`text-sm leading-relaxed ${
-                    isUser ? 'text-green-100' : 'text-gray-600'
-                  }`}>
-                    <span className={`font-medium ${
-                      isUser ? 'text-green-100' : 'text-gray-500'
+                  {/* Malayalam Translation */}
+                  {message.translatedTranscription && message.translatedTranscription !== message.transcription && (
+                    <div className="mb-2">
+                      <p className={`text-xs font-medium mb-1 ${
+                        isUser ? 'text-green-200' : 'text-gray-600'
+                      }`}>
+                        മലയാളം (Malayalam):
+                      </p>
+                      <p className={`text-sm leading-relaxed ${
+                        isUser ? 'text-green-100' : 'text-gray-600'
+                      }`}>
+                        "{message.translatedTranscription}"
+                      </p>
+                    </div>
+                  )}
+                  
+                  {/* English Transcription */}
+                  <div className={message.translatedTranscription && message.translatedTranscription !== message.transcription ? "mt-2 pt-2 border-t" : ""} style={{
+                    borderColor: isUser ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)'
+                  }}>
+                    <p className={`text-sm leading-relaxed ${
+                      isUser ? 'text-green-100' : 'text-gray-600'
                     }`}>
-                      Transcribed:
-                    </span>
-                    {' "' + message.transcription + '"'}
-                  </p>
+                      <span className={`font-medium ${
+                        isUser ? 'text-green-100' : 'text-gray-500'
+                      }`}>
+                        {message.translatedTranscription && message.translatedTranscription !== message.transcription ? 'English: ' : 'Transcribed: '}
+                      </span>
+                      {'"' + message.transcription + '"'}
+                    </p>
+                  </div>
                 </div>
               )}
               
