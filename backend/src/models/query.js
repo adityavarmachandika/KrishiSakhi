@@ -9,6 +9,8 @@ const query_schema = new mongoose.Schema({
     crop_id:{type:mongoose.Schema.Types.ObjectId, ref:'crop_details'},
     question:{type:String, required:true},
     answer:{type:String},
+    translated_query:{type:String},
+    translated_answer:{type:String},
     date:{type:Date, default:Date.now}
 })
 
