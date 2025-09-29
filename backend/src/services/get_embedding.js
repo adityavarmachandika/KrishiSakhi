@@ -17,7 +17,8 @@ export const get_embedding = async (text) => {
     const result = await model.embedContent({
       content: {
         parts: [{ text }]
-      }
+      },
+        taskType: "SEMANTIC_SIMILARITY"
     });
 
     return result.embedding.values;
