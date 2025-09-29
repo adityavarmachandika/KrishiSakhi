@@ -3,11 +3,11 @@ import { queryActivityService } from "../services/summarize_log.js";
 import { chatWithGemini } from "../services/gemini_service.js";
 import { getCropDetailsText } from "../services/crop_details_to_text.js";
 import { all_queries_service } from "../services/all_queries.js";
-
+import { translateToMalayalam } from "../services/translation_service.js";
 
 export const query_controller = async (req, res) => {
   try {
-    const { farmer_id, query, crop_id } = req.body;
+    const { farmer_id, query, crop_id ,translated_query} = req.body;
 
     if (!farmer_id || !query) {
       return res.status(400).json({ error: "farmer_id and query are required" });
@@ -17,6 +17,7 @@ export const query_controller = async (req, res) => {
       farmer_id,
       crop_id,
       question: query, 
+      translated_query,
       date: new Date(),
     });
 
@@ -54,9 +55,12 @@ Make the answer brief and concise. If unsure, just say "I don't know". Do not fa
     const geminiResponse = await chatWithGemini(systemPrompt);
 
     newQuery.answer = geminiResponse;
-    await newQuery.save();
-
     
+
+    // Translation function using MyMemory API (free translation service)
+   newQuery.translated_answer= translated_query? await translateToMalayalam(geminiResponse):"";
+
+    await newQuery.save();
     res.json({ results:newQuery});
   } catch (error) {
     console.error("Chat error:", error);

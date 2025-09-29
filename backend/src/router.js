@@ -6,7 +6,7 @@ import crop_router from "./routes/crop_details.js";
 import vector_activity_routes from "./routes/vector_activity_routes.js";
 import news_router from "./routes/news_route.js";
 
-// import { transcribeRequestAudio } from "./services/speech_text.js";
+
 import query_router from "./routes/query_routes.js";
 const router = express.Router();
 
@@ -19,7 +19,7 @@ router.use("/activity",activity_router)
 router.use("/crop",crop_router)
 router.use("/vector",vector_activity_routes)
 router.use("/news",news_router)
-// router.post("/speech_text", upload.single("audio"), transcribeRequestAudio);
+
 router.use("/chat",query_router)
 
 
