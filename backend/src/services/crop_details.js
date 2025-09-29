@@ -8,7 +8,7 @@ export const crop_details_service = async (data) => {
             soil_type:data.soil_type,
             feild_size:data.feild_size,
             irrigation_type:data.irrigation_type,
-            present_crop:date.present_crop,
+            present_crop:data.present_crops,
             previous_crops:data.previous_crops,
             location:data.location
         })

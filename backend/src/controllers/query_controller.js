@@ -37,15 +37,12 @@ export const query_controller = async (req, res) => {
     
 
 const systemPrompt = `
-Yo u are an expert agricultural assistant. Answer the user's query using the following context:
-
+You are an expert agricultural assistant. Answer the user's query using the following context:
 User Query: ${query}
 
-Farmer Activity History:
-${history_context}
+Farmer Activity History:${history_context}
 
-Crop Context:
-${crop_context}
+Crop Context:${crop_context}
 
 Weather Context:
 ${weather_context}
