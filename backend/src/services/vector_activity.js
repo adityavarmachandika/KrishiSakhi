@@ -1,12 +1,17 @@
 
 import { ChromaClient } from "chromadb";
+import { CloudClient } from "chromadb";
 import dotenv from "dotenv";
 import { activity } from "../models/activity.js";
 import { get_embedding } from "../services/get_embedding.js";
 
 dotenv.config();
 
-const chroma = new ChromaClient({ path: process.env.CHROMA_PATH });
+const chroma = new CloudClient({
+  apiKey: process.env.CHROMA_API_KEY,
+  tenant: process.env.CHROMA_TENANT,
+  database: 'krishisakhi'
+});
 
 async function getFarmerCollection(farmer_id) {
   const collectionName = `farmer_${farmer_id}`;
