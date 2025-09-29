@@ -1,5 +1,5 @@
 
-import { ChromaClient } from "chromadb";
+
 import { CloudClient } from "chromadb";
 import dotenv from "dotenv";
 import { activity } from "../models/activity.js";
