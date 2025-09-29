@@ -56,8 +56,6 @@ Make the answer brief and concise. If unsure, just say "I don't know". Do not fa
 
     const geminiResponse = await chatWithGemini(systemPrompt);
 
-
-   
     newQuery.answer = geminiResponse;
     await newQuery.save();
 
