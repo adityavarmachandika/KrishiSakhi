@@ -243,6 +243,47 @@ const ChatPage = () => {
     }));
   };
 
+
+    const formatLLMResponse = (response) => {
+    if (!response) return response;
+    
+    let formatted = response;
+        formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    
+    formatted = formatted.replace(/(?<!\*)\*([^*]+)\*(?!\*)/g, '<em>$1</em>');
+    
+    // Convert numbered lists (1. text) to proper HTML lists
+    const numberedListRegex = /^(\d+\.\s+.+)(?:\n(\d+\.\s+.+))*$/gm;
+    formatted = formatted.replace(/(\n|^)(\d+\.\s+.+(?:\n\d+\.\s+.+)*)/g, (match, prefix, listContent) => {
+        const items = listContent.split('\n').map(item => {
+            const cleaned = item.replace(/^\d+\.\s+/, '');
+            return `<li>${cleaned}</li>`;
+        }).join('');
+        return `${prefix}<ol>${items}</ol>`;
+    });
+    
+    // Convert bullet points (- text or • text) to proper HTML lists
+    const bulletListRegex = /(\n|^)([-•]\s+.+(?:\n[-•]\s+.+)*)/g;
+    formatted = formatted.replace(bulletListRegex, (match, prefix, listContent) => {
+        const items = listContent.split('\n').map(item => {
+            const cleaned = item.replace(/^[-•]\s+/, '');
+            return cleaned ? `<li>${cleaned}</li>` : '';
+        }).filter(item => item).join('');
+        return items ? `${prefix}<ul>${items}</ul>` : match;
+    });
+    
+    // Convert line breaks to <br> tags
+    formatted = formatted.replace(/\n/g, '<br>');
+    
+    // Clean up extra <br> tags around lists
+    formatted = formatted.replace(/<br><ol>/g, '<ol>');
+    formatted = formatted.replace(/<\/ol><br>/g, '</ol>');
+    formatted = formatted.replace(/<br><ul>/g, '<ul>');
+    formatted = formatted.replace(/<\/ul><br>/g, '</ul>');
+    
+    return formatted;
+}; 
+  
   const sendMessage = async () => {
     if (newMessage.trim() && !isSending) {
       if (!user?.id) {
@@ -326,7 +367,7 @@ const ChatPage = () => {
         const requestPayload = {
           farmer_id: farmerId,
           query: currentMessage,
-          translated_message: translatedMessage // Add Malayalam translation
+          translated_query: translatedMessage // Add Malayalam translation
         };
         
         if (cropId) {
@@ -344,23 +385,15 @@ const ChatPage = () => {
         // Remove typing indicator
         setDisplayedMessages(prev => prev.filter(msg => msg.id !== 'typing-indicator'));
         
-        // Translate AI response to Malayalam for better user experience
-        let translatedAiResponse = '';
-        try {
-          translatedAiResponse = await translateToMalayalam(response.data.results.answer);
-          console.log('Original AI response:', response.data.results.answer);
-          console.log('Translated AI response to Malayalam:', translatedAiResponse);
-        } catch (error) {
-          console.error('AI response translation failed:', error);
-          translatedAiResponse = response.data.results.answer; // Fallback to original
-        }
+        console.log('Original AI response:', response.data.results.answer);
+        console.log('Translated AI response from backend:', response.data.results.translated_answer);
         
         // Add AI response to messages - updated to match new API response structure
         const aiResponse = {
           id: response.data.results._id,
           type: 'text',
           content: response.data.results.answer,
-          translatedContent: translatedAiResponse,
+          translatedContent: response.data.results.translated_answer || response.data.results.answer,
           sender: 'ai',
           timestamp: new Date(response.data.results.date),
         };
@@ -640,9 +673,10 @@ const ChatPage = () => {
                   }`}>
                     മലയാളം (Malayalam):
                   </p>
-                  <p className="text-sm leading-relaxed whitespace-pre-wrap font-medium">
-                    {message.translatedContent}
-                  </p>
+                  <div 
+                    className="text-sm leading-relaxed font-medium"
+                    dangerouslySetInnerHTML={{ __html: formatLLMResponse(message.translatedContent) }}
+                  />
                 </div>
               )}
               
@@ -656,7 +690,10 @@ const ChatPage = () => {
                     English:
                   </p>
                 )}
-                <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
+                <div 
+                  className="text-sm leading-relaxed"
+                  dangerouslySetInnerHTML={{ __html: formatLLMResponse(message.content) }}
+                />
               </div>
               
               <p className={`text-xs mt-2 ${isUser ? 'text-green-100' : 'text-gray-500'}`}>
@@ -738,11 +775,11 @@ const ChatPage = () => {
                       }`}>
                         മലയാളം (Malayalam):
                       </p>
-                      <p className={`text-sm leading-relaxed ${
+                      <div className={`text-sm leading-relaxed ${
                         isUser ? 'text-green-100' : 'text-gray-600'
                       }`}>
-                        "{message.translatedTranscription}"
-                      </p>
+                        "<span dangerouslySetInnerHTML={{ __html: formatLLMResponse(message.translatedTranscription) }}></span>"
+                      </div>
                     </div>
                   )}
                   
@@ -750,7 +787,7 @@ const ChatPage = () => {
                   <div className={message.translatedTranscription && message.translatedTranscription !== message.transcription ? "mt-2 pt-2 border-t" : ""} style={{
                     borderColor: isUser ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)'
                   }}>
-                    <p className={`text-sm leading-relaxed ${
+                    <div className={`text-sm leading-relaxed ${
                       isUser ? 'text-green-100' : 'text-gray-600'
                     }`}>
                       <span className={`font-medium ${
@@ -758,8 +795,8 @@ const ChatPage = () => {
                       }`}>
                         {message.translatedTranscription && message.translatedTranscription !== message.transcription ? 'English: ' : 'Transcribed: '}
                       </span>
-                      {'"' + message.transcription + '"'}
-                    </p>
+                      "<span dangerouslySetInnerHTML={{ __html: formatLLMResponse(message.transcription) }}></span>"
+                    </div>
                   </div>
                 </div>
               )}

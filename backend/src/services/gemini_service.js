@@ -16,7 +16,7 @@ export const get_summary = async (textToSummarize) => {
   try {
  
     const model = genAI.getGenerativeModel({
-      model: 'gemini-1.5-pro',
+      model: 'gemini-2.5-pro',
       systemInstruction: "You are a helpful assistant for farmers. Summarize the provided text concisely in simple, easy-to-understand language.",
     });
     
@@ -48,7 +48,7 @@ export const chatWithGemini = async (userMessage) => {
   }
 
   try {
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-pro' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-pro' });
 
     const result = await model.generateContent({
       contents: [{ parts: [{ text: userMessage }] }]
