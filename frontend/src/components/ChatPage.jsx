@@ -134,20 +134,20 @@ const ChatPage = () => {
           const previousChats = [];
           
           response.data.data.forEach(chat => {
-            // Add user question
             previousChats.push({
               id: `${chat._id}-question`,
               type: 'text',
               content: chat.question,
+              translatedContent: chat.translated_query || chat.question,
               sender: 'user',
               timestamp: new Date(chat.date),
             });
             
-            // Add AI response immediately after the question
             previousChats.push({
               id: `${chat._id}-answer`,
               type: 'text',
               content: chat.answer || 'No response available',
+              translatedContent: chat.translated_answer || chat.answer || 'No response available',
               sender: 'ai',
               timestamp: new Date(chat.date),
             });
