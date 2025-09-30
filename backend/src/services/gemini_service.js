@@ -17,7 +17,7 @@ export const get_summary = async (textToSummarize) => {
     throw new Error('Invalid input: A non-empty string is required for summarization.');
   }
 
-  const prompt=`You are a helpful assistant for farmers. Summarize the provided text concisely in simple, easy-to-understand language. This is the text: ${textToSummarize} make sure it is consize`;
+ const prompt = `You are the farmer who performed these actions. Summarize what you did in the first person ("I did..."). Be brief and only state the essential tasks you completed. Here is the text: ${textToSummarize}`;
   try {
     const modelName = 'gemini-2.5-pro';
     const model = genAI.getGenerativeModel({
