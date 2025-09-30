@@ -6,6 +6,8 @@ import authMiddleware from "./middleware/jwt_middleware.js";
 import { url } from "zod";
 import { urlencoded } from "express";
 // import './services/cron_notifications.js'
+import dotenv from "dotenv";
+dotenv.config();
 
 
 
